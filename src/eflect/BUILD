@@ -45,6 +45,8 @@ java_library(
     "//src/eflect/data",
     "@clerk//core/clerk",
     "@clerk//core/clerk:profiler",
+    "@clerk//core/clerk/concurrent",
+    "@clerk//core/clerk/concurrent:periodic_scheduler",
     "@clerk//core/clerk/concurrent:periodic_scheduling",
     ":dagger",
   ]
