@@ -13,7 +13,7 @@ public class TaskSample implements Sample {
   private static int[] readApplicationJiffies() {
     int[] jiffies = new int[SOCKETS];
     File[] tasks = new File(String.join(
-      System.lineSeparator(),
+      File.separator,
       "/proc",
       Integer.toString(getProcessId()),
       "task"))
@@ -22,7 +22,7 @@ public class TaskSample implements Sample {
     for (int i = 0; i < tasks.length; i++) {
       int tid = Integer.parseInt(tasks[i].getName());
       String task = String.join(
-        System.lineSeparator(),
+        File.separator,
         "/proc",
         Integer.toString(getProcessId()),
         "task",

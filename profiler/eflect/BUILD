@@ -8,6 +8,7 @@ java_binary(
     "Driver.java",
   ],
   deps = [
+    "//src/eflect",
     "//src/eflect:profiler",
   ],
   resources = [

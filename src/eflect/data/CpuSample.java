@@ -10,10 +10,11 @@ import java.io.FileReader;
 /** Data structure for jiffies difference by socket between CPU snapshots. */
 public final class CpuSample implements Sample {
   private static final int CPUS = Runtime.getRuntime().availableProcessors();
+  private static final String statFile = String.join(File.separator, "/proc", "stat");
 
   private static int[] readMachineJiffies() {
     int[] jiffies = new int[SOCKETS];
-    File cpus = new File(String.join(System.lineSeparator(), "/proc", "stat"));
+    File cpus = new File(statFile);
 
     try (BufferedReader reader = new BufferedReader(new FileReader(cpus))) {
       reader.readLine();

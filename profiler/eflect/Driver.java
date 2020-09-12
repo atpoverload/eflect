@@ -1,18 +1,22 @@
 package eflect;
 
-import eflect.EflectProfiler;
-
 public class Driver {
   public static void main(String[] args) throws Exception {
     EflectProfiler.start();
-    for (int i = 0; i < 10; i++) {
-      Thread.sleep(1000);
-      System.out.println(EflectProfiler.dump());
+    for (int i = 0; i < 1; i++) {
+      Thread.sleep(500);
+      // for (EnergyFootprint e: EflectProfiler.dump()) {
+      //   System.out.println(e.getEnergy());
+      // }
     }
     EflectProfiler.stop();
 
-    System.out.println(EflectProfiler.dump());
+    for (EnergyFootprint e: EflectProfiler.dump()) {
+      System.out.println(e.getStart() + "," + e.getEnd() + "," + e.getEnergy() + "," + e.getPower());
+    }
 
-    System.out.println(EflectProfiler.dump());
+    // for (EnergyFootprint e: EflectProfiler.dump()) {
+    //   System.out.println(e.getEnergy());
+    // }
   }
 }

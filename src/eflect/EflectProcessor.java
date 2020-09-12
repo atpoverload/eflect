@@ -31,8 +31,9 @@ public final class EflectProcessor implements Processor<Sample , Iterable<Energy
     ArrayList<EnergyFootprint> profiles = new ArrayList<>();
     EflectSampleMerger merger = new EflectSampleMerger();
 
+    TreeMap<Instant, EflectSampleMerger> data;
     synchronized (this) {
-      TreeMap<Instant, EflectSampleMerger> data = this.data;
+      data = this.data;
       this.data = new TreeMap<>();
     }
 
@@ -42,7 +43,6 @@ public final class EflectProcessor implements Processor<Sample , Iterable<Energy
       if (merger.valid()) {
         profiles.add(merger.process());
         merger = new EflectSampleMerger();
-        attempts = 0;
       }
       lastTimestamp = timestamp;
     }

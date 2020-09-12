@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class EflectProfiler {
-  @Component(modules = {PeriodicSchedulingModule.class, EflectModule.class})
+  @Component(modules = {EflectModule.class, PeriodicSchedulingModule.class})
   interface ClerkFactory {
     Profiler<Sample, Iterable<EnergyFootprint>> newClerk();
   }

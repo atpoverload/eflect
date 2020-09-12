@@ -16,6 +16,7 @@ public final class RaplSample implements Sample {
     }
     return energy;
   }
+  
   private final double[] energy;
   private final Instant timestamp;
 
