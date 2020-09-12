@@ -10,4 +10,7 @@ java_binary(
   deps = [
     "//src/eflect:profiler",
   ],
+  resources = [
+    "@jRAPL//src/jrapl:libCPUScaler.so",
+  ],
 )
