@@ -3,7 +3,7 @@ package eflect;
 import clerk.concurrent.PeriodicSchedulingModule;
 import clerk.Profiler;
 import dagger.Component;
-import eflect.sampling.Sample;
+import eflect.data.Sample;
 import java.time.Instant;
 import java.util.Map;
 import java.util.TreeMap;
@@ -11,13 +11,13 @@ import java.util.TreeMap;
 public class EflectProfiler {
   @Component(modules = {PeriodicSchedulingModule.class, EflectModule.class})
   interface ClerkFactory {
-    Profiler<Sample, Integer> newClerk();
+    Profiler<Sample, Iterable<EnergyFootprint>> newClerk();
   }
 
   private static final ClerkFactory clerkFactory = DaggerEflectProfiler_ClerkFactory.builder().build();
 
   private static Profiler clerk;
-  // private static Map<Instant, MemoryStats> profile = new TreeMap<>();
+  private static Iterable<EnergyFootprint> profile;
 
   // starts a profiler if there is not one
   public static void start() {
@@ -30,17 +30,17 @@ public class EflectProfiler {
   // stops the profiler if there is one
   public static void stop() {
     if (clerk != null) {
-      // profile = (Map<Instant, MemoryStats>) clerk.stop();
+      profile = (Iterable<EnergyFootprint>) clerk.stop();
       clerk = null;
     }
   }
 
   // restart the profiler so that we start fresh
-  public static Integer dump() {
+  public static Iterable<EnergyFootprint> dump() {
     if (clerk != null) {
       stop();
       start();
     }
-    return 1; // profile;
+    return profile;
   }
 }

@@ -36,19 +36,20 @@ public final class EflectProcessor implements Processor<Sample , Iterable<Energy
       this.data = new TreeMap<>();
     }
 
+    Instant lastTimestamp = Instant.now();
     for (Instant timestamp: data.keySet()) {
       merger = merger.merge(data.get(timestamp));
-      // if (preAttributer.valid()) {
-      if (merger.valid() || (attempts++ >= 25 && merger.attributable())) {
+      if (merger.valid()) {
         profiles.add(merger.process());
         merger = new EflectSampleMerger();
         attempts = 0;
       }
+      lastTimestamp = timestamp;
     }
 
     synchronized(this) {
-      merger = merger.merge(data.getOrDefault(merger.getTimestamp(), new EflectSampleMerger()));
-      data.put(merger.getTimestamp(), merger);
+      merger = merger.merge(data.getOrDefault(lastTimestamp, new EflectSampleMerger()));
+      data.put(lastTimestamp, merger);
     }
 
     return profiles;

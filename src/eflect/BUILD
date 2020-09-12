@@ -27,6 +27,7 @@ java_library(
   ],
   deps = [
     ":eflect",
+    "//src/eflect/data",
     "@clerk//core/clerk",
     ":dagger",
   ]
@@ -39,6 +40,7 @@ java_library(
     "EflectProfiler.java"
   ],
   deps = [
+    ":eflect",
     ":module",
     "//src/eflect/data",
     "@clerk//core/clerk",

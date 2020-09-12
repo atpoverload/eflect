@@ -64,54 +64,22 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
       merged.energy[socket] = Math.max(this.energy[socket], this.energy[socket]);
     }
 
+    merged.start = TimeUtils.min(this.start, other.start);
+    merged.end = TimeUtils.max(this.end, other.end);
+
     return merged;
   }
 
   boolean valid() {
-    if (!attributable()) {
-      return false;
-    }
-
-    int energyConsumed = 0;
-    for (int socket = 0; socket < SOCKETS; socket++) {
-      energyConsumed += energy.getEnergy(socket);
-    }
-
-    if (energyConsumed == 0) {
-      return false;
-    }
-
-    for (int socket = 0; socket < SOCKETS; socket++) {
-      if (tasks.getJiffies(socket) > cpu.getJiffies(socket)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  Instant getTimestamp() {
-    return end;
-  }
-
-  // this is supposed to determine if we produce a footprint; should think about how to customize this
-  private boolean valid() {
     if (TimeUtils.equal(start, Instant.MAX) || TimeUtils.equal(end, Instant.MIN)) {
       return false;
     }
 
     for (int socket = 0; socket < SOCKETS; socket++) {
-      if (this.energy[socket] == 0) {
+      if (energy[socket] == 0 || cpu[socket] == 0 || app[socket] == 0 || app[socket] > cpu[socket]) {
         return false;
       }
     }
-
-    for (int socket = 0; socket < SOCKETS; socket++) {
-      if (cpu.getJiffies(socket) < 0) {
-        return false;
-      }
-    }
-
     return true;
   }
 }
