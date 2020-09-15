@@ -31,7 +31,6 @@ public final class EflectProcessor implements Processor<Sample , Iterable<Energy
    */
   @Override
   public Iterable<EnergyFootprint> get() {
-    int attempts = 0;
     ArrayList<EnergyFootprint> profiles = new ArrayList<>();
     EflectSampleMerger merger = new EflectSampleMerger();
 

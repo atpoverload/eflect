@@ -21,13 +21,13 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
   private Instant start = Instant.MAX;
   private Instant end = Instant.MIN;
 
-  private final int[] startApp = new int[SOCKETS];
-  private final int[] startCpu = new int[SOCKETS];
-  private final double[] startEnergy = new double[SOCKETS];
+  final int[] startApp = new int[SOCKETS];
+  final int[] startCpu = new int[SOCKETS];
+  final double[] startEnergy = new double[SOCKETS];
 
-  private final int[] endApp = new int[SOCKETS];
-  private final int[] endCpu = new int[SOCKETS];
-  private final double[] endEnergy = new double[SOCKETS];
+  final int[] endApp = new int[SOCKETS];
+  final int[] endCpu = new int[SOCKETS];
+  final double[] endEnergy = new double[SOCKETS];
 
   /** Puts the sample data into the correct container and adjust the values. */
   @Override

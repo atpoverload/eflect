@@ -43,6 +43,7 @@ java_library(
     ":module",
     "//src/eflect/data",
     "@clerk//clerk:profiler",
+    "@clerk//clerk/concurrent",
     "@clerk//clerk/concurrent:periodic_sampling",
     ":dagger",
   ]
