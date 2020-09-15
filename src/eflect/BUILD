@@ -14,7 +14,7 @@ java_library(
   deps = [
     "//src/eflect/data",
     "//src/eflect/utils",
-    "@clerk//core/clerk",
+    "@clerk//clerk",
     "@jRAPL"
   ]
 )
@@ -28,7 +28,7 @@ java_library(
   deps = [
     ":eflect",
     "//src/eflect/data",
-    "@clerk//core/clerk",
+    "@clerk//clerk",
     ":dagger",
   ]
 )
@@ -43,10 +43,10 @@ java_library(
     ":eflect",
     ":module",
     "//src/eflect/data",
-    "@clerk//core/clerk",
-    "@clerk//core/clerk:profiler",
-    "@clerk//core/clerk/concurrent",
-    "@clerk//core/clerk/concurrent:periodic_scheduling",
+    "@clerk//clerk",
+    "@clerk//clerk:profiler",
+    "@clerk//clerk/concurrent",
+    "@clerk//clerk/concurrent:periodic_sampling",
     ":dagger",
   ]
 )

@@ -3,7 +3,8 @@ package eflect;
 import java.time.Duration;
 import java.time.Instant;
 
-/** Representation of the application's energy usage over some time interval. */
+/** Representation of the application's energy usage over a time interval. */
+// TODO(timur): this can't be usefully exchanged.
 public final class EnergyFootprint {
   private final Instant start;
   private final Instant end;

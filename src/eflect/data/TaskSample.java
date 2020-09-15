@@ -8,7 +8,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-/** Collection of relative task snapshots that can be accessed by socket. */
+/** Snapshot of the application's jiffies. */
 public class TaskSample implements Sample {
   private static int[] readApplicationJiffies() {
     int[] jiffies = new int[SOCKETS];

@@ -2,6 +2,7 @@ package eflect.utils;
 
 import java.time.Instant;
 
+/** Utilities providing boolean algebra for {@link Instant}s. */
 public final class TimeUtils {
   // equality
   public static boolean atMost(Instant first, Instant second) {

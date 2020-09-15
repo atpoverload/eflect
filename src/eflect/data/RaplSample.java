@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import jrapl.util.EnergyCheckUtils;
 
-/** Energy values at some time accessible by socket. */
+/** Snapshot of the machine's rapl counters. */
 public final class RaplSample implements Sample {
   public static double[] readEnergy() {
     double[] energy = new double[SOCKETS];
@@ -16,7 +16,7 @@ public final class RaplSample implements Sample {
     }
     return energy;
   }
-  
+
   private final double[] energy;
   private final Instant timestamp;
 

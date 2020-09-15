@@ -1,8 +1,8 @@
 package eflect;
 
 import static eflect.utils.OsUtils.getProcessId;
-import static jrapl.util.EnergyCheckUtils.SOCKETS;
 import static jrapl.util.EnergyCheckUtils.ENERGY_WRAP_AROUND;
+import static jrapl.util.EnergyCheckUtils.SOCKETS;
 
 import clerk.Processor;
 import eflect.data.CpuSample;
@@ -11,7 +11,12 @@ import eflect.data.Sample;
 import eflect.data.TaskSample;
 import eflect.utils.TimeUtils;
 import java.time.Instant;
-
+/**
+ * Processor that merges jiffies and energy samples into a single footprint.
+ *
+ * This processor implements the eflect algorithm by tracking absolute values
+ * from samples and computing the difference as needed.
+ */
 final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
   private Instant start = Instant.MAX;
   private Instant end = Instant.MIN;
@@ -24,8 +29,9 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
   private final int[] endCpu = new int[SOCKETS];
   private final double[] endEnergy = new double[SOCKETS];
 
+  /** Puts the sample data into the correct container and adjust the values. */
   @Override
-  public void add(Sample s) {
+  public void accept(Sample s) {
     // bad; think about another separation mechanism
     if (s instanceof TaskSample) {
       for (int i = 0; i < SOCKETS; i++) {
@@ -51,8 +57,9 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
     end = TimeUtils.max(timestamp, end);
   }
 
+  /** Compute an {@link EnergyFootprint} from the stored data. */
   @Override
-  public EnergyFootprint process() {
+  public EnergyFootprint get() {
     double[] appEnergy = new double[SOCKETS];
     for (int socket = 0; socket < SOCKETS; socket++) {
       double energy = endEnergy[socket] - startEnergy[socket];
@@ -73,6 +80,10 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
     return new EnergyFootprint(start, end, appEnergy);
   }
 
+  /**
+   * Merges with another processor by taking the max and min of the values for
+   * each field.
+   */
   EflectSampleMerger merge(EflectSampleMerger other) {
     EflectSampleMerger merged = new EflectSampleMerger();
 
@@ -102,6 +113,7 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
     return merged;
   }
 
+  /** Checks if the timestamps are valid and that a non-zero footprint will be produced. */
   boolean valid() {
     if (TimeUtils.equal(start, Instant.MAX) || TimeUtils.equal(end, Instant.MIN)) {
       return false;
@@ -119,15 +131,5 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
       }
     }
     return true;
-  }
-
-  @Override
-  public String toString() {
-    return String.join(",",
-      start.toString(),
-      end.toString(),
-      Integer.toString(startApp[0]), Integer.toString(endApp[0]),
-      Integer.toString(startCpu[0]), Integer.toString(endCpu[0]),
-      Double.toString(startEnergy[0]), Double.toString(endEnergy[0]));
   }
 }

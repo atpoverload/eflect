@@ -7,26 +7,30 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 
 /**
-* Computes an estimate of application energy consumption from data across the
-* runtime. This implements the same logic used in our data processing codebase
-* (src/python/attribution) to compute runtime attribution. Data is stored in
-* a typed collection and picked up by a processing method.
-*/
+ * A processor the stores samples along timestamp-indexed storage and can
+ * collapse samples into {@link EnergyFootprint}s.
+ */
 public final class EflectProcessor implements Processor<Sample , Iterable<EnergyFootprint>> {
   private TreeMap<Instant, EflectSampleMerger> data = new TreeMap<>();
 
-  /** Puts the data in relative timestamp-indexed storage to keep things sorted. */
+  /** Places the sample in a sorted, timestamp-indexed bucket. */
   @Override
-  public void add(Sample s) {
+  public void accept(Sample s) {
     synchronized(this) {
       Instant timestamp = Instant.now();
       data.putIfAbsent(timestamp, new EflectSampleMerger());
-      data.get(timestamp).add(s);
+      data.get(timestamp).accept(s);
     }
   }
 
+  /**
+   * Grabs the stored data and forward scans the data for valid footprints. If
+   * a timestamp cannot produce a valid footprint, the data is merged with the
+   * next timestamp until a valid footprint is produced. Once all data is
+   * consumed, the final sub-processor is replaced into storage.
+   */
   @Override
-  public Iterable<EnergyFootprint> process() {
+  public Iterable<EnergyFootprint> get() {
     int attempts = 0;
     ArrayList<EnergyFootprint> profiles = new ArrayList<>();
     EflectSampleMerger merger = new EflectSampleMerger();
@@ -41,7 +45,7 @@ public final class EflectProcessor implements Processor<Sample , Iterable<Energy
     for (Instant timestamp: data.keySet()) {
       merger = merger.merge(data.get(timestamp));
       if (merger.valid()) {
-        profiles.add(merger.process());
+        profiles.add(merger.get());
         merger = new EflectSampleMerger();
       }
       lastTimestamp = timestamp;

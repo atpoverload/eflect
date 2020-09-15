@@ -7,7 +7,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 
-/** Data structure for jiffies difference by socket between CPU snapshots. */
+/** Snapshot of the machine's jiffies. */
 public final class CpuSample implements Sample {
   private static final int CPUS = Runtime.getRuntime().availableProcessors();
   private static final String statFile = String.join(File.separator, "/proc", "stat");

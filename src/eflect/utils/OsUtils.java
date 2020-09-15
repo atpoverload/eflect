@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/** Utilities to access the operating system. */
+// TODO(timur): there's only one method here...
 public final class OsUtils {
   private static int CPUS = Runtime.getRuntime().availableProcessors();
   /** Wrapper for libc methods. This is locked so that users stick to the public API. */
