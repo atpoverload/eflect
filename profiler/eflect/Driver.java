@@ -9,9 +9,8 @@ public class Driver {
       //   System.out.println(e.getEnergy());
       // }
     }
-    EflectProfiler.stop();
-
-    for (EnergyFootprint e: EflectProfiler.dump()) {
+    
+    for (EnergyFootprint e: EflectProfiler.stop()) {
       System.out.println(e.getStart() + "," + e.getEnd() + "," + e.getEnergy() + "," + e.getPower());
     }
 

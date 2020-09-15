@@ -21,7 +21,6 @@ java_library(
 
 java_library(
   name = "module",
-  visibility = ["//visibility:public"],
   srcs = [
     "EflectModule.java"
   ],
@@ -43,9 +42,7 @@ java_library(
     ":eflect",
     ":module",
     "//src/eflect/data",
-    "@clerk//clerk",
     "@clerk//clerk:profiler",
-    "@clerk//clerk/concurrent",
     "@clerk//clerk/concurrent:periodic_sampling",
     ":dagger",
   ]

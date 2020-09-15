@@ -2,13 +2,10 @@ package eflect;
 
 import static java.util.Collections.emptyList;
 
-import clerk.concurrent.PeriodicSamplingModule;
 import clerk.Profiler;
+import clerk.concurrent.PeriodicSamplingModule;
 import dagger.Component;
 import eflect.data.Sample;
-import java.time.Instant;
-import java.util.Map;
-import java.util.TreeMap;
 
 /** A profiler that estimates the energy consumed by the current application. */
 public class EflectProfiler {

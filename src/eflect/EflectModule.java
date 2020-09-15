@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 
 /** Module to provide the eflect implementation. */
 @Module
-public interface EflectModule {
+interface EflectModule {
   @Provides
   @DataSource
   static Iterable<Supplier<Sample>> provideSources() {
