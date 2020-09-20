@@ -1,86 +1,84 @@
 # eflect benchmark suite
 
-This document describes an API for a macrobenchmark suite that uses a customized energy profiler to analyze Java runtimes. This work may be built on top of the [`jmh`](https://openjdk.java.net/projects/code-tools/jmh) to enforce a hermetic environment independently of the system environment. We intend to primarily support Java (which versions? it's easier to implement in 8+) and Android systems with our bootstrapper.
+This document describes some high-level designs for a macrobenchmark suite that uses [`eflect`]() to analyze Java runtimes. This work may be an extension of the [`jmh`](https://openjdk.java.net/projects/code-tools/jmh) to enforce a hermetic environment. We want to support as many flavors of Java as possible and potentially begin exploring language-agnostic profiling.
 
-## in-situ vs external profiling
+## profiling methods
 
-Our framework is designed around in-situ profiler called [`eflect`]() so all data are accessible within the same runtime. External profiling can also be performed but requires additional user effort to align with `eflect` data.
+This framework would use [`eflect`]() to enforce energy-awareness in any Java application. The benchmark suite can mimic other testing frameworks to allow integration into commonly used toolkits. The end goal would be a testing framework that could be used anonymously. This is the primary reason I champion [`dagger`] because it can provide us with that hook.
+
+We can also explore implementations to improve performance and/or provide external profiling by only monitoring the OS. Here are the potential goals that could be worked towards:
+
+ - centralized energy-awareness; potential integration into `/proc/[pid]/stat` as a module
+ - extend `rapl` and `eflect` support to other architectures; DI is powerful here because it can remove bloat from enum-based approaches with compile-time correctness.
+ - runtime decoupling of `eflect` and the application
+ - language-agnostic data containers that are optimized for exchange (not the CSVs I have been using)
+
+I will admit that some of the work involved in the external implementation tasks feel moderately above my current skill level. Some of them are almost certainly too ambitious as well.
 
 ## Pure Java API
 
-This section describes the intended API for this benchmark suite. This material is subject to change. Our framework automates the execution and management of the `eflect` profiler to capture precise representations of the runtime. Annotations can be used to customize the profiler (I'd rather do this through dagger honestly). We can provide the following profiles:
-
- - total energy
- - timestamped energy trace
- - method energy ranking
-
-Profile evaluation is also customizable through algebraic profile methods.
-
-Below is an example benchmark for evaluating method rankings of `something`:
+I am going to give a high-level picture of what the Java benchmarking API could look like. First, we would like to use Java's annotations to link together the stages of a benchmark; the reason to do this is to guarantee compile-time correctness and removal of potential performance loss from calling the benchmark method (same as a unit test). An example of an energy footprint evaluation system could look like:
 
 ```java
-@Setup
-public void setUp() {
-  // perform something, might need to prevent the jmh from optimizing?
-}
+private final double error = 5.0;
+
+@Param({"25", "50", "75"})
+public int n;
+
+@Param({"25.0", "30.0", "40.0"})
+public double SLA;
 
 @Benchmark
-public void workload1() {
-  // program
-}
-
-@Benchmark
-public void workload2() {
-  // program
-}
-
-@Evaluation
-public void evaluateRankings(MethodRanking ... rankings) {
-  double totalScore = 0;
-  double totalError = 0;
-  for (int i = 0; i < rankings.length; i++) {
-    // performs pearson correlation between the energy values for each workload versus the baseline?
-    double score = baselineRanking.compare(rankings[i]);
-    totalScore += score;
-    totalError += (1 - score ^ 2) / (rankings[i].getCount() - 1);
-  }
-  logger.info("score of " + totalScore + "\u00B1" + sqrt(totalError));
+public void workload(int n, double SLA) {
+  assertThat(fibonacci(n)).isWithin(SLA, error);
 }
 ```
 
-Collected profiles can also be written to disk. We intend to support `csv`, `protobuf`, `sql`, etc.
+This would assert that the computation of the n-th fibonacci number's implementation is within 5J of a group of SLAs. This could be extended to deal with different kinds of data or even to integrate optimizations:
+
+```java
+@Benchmark(profile = {MethodRanking.class})
+public void workload(int n, MethodRanking ranking) {
+  assertThat(fibonacci(n)).isWithin(ranking, error);
+}
+
+@Benchmark(profile = {EnergyFootprint.class})
+public void workload(int n, Knob[] knobs) {
+  optimize(fibonacci(n)).with(knobs);
+}
+```
+
+The `jmh` also has options to fork the runtime, which would create a fresh one. This could potentially resolve some of the issues we saw previously with mismatched method rankings. I have a lot more reading and testing to do before I can have a better understanding of how to do such a thing, let alone if it is even truly possible.
+
+This work would be able to support library analysis because we would be creating a reliable environment to evaluate provided applications instead of tuning the benchmark itself.
+
+These are very rough examples and again may be beyond the scope of what we can realistically do.
 
 ## External profiling
 
-To profile an arbitrary program with some `[pid]`, you can use the eflect command-line:
+As we have discussed, the current `eflect` algorithm is language-agnostic because it uses pure OS information. This means I could wrote a command-line tool like:
 
 ```bash
-## this is the implementation we want ##
-# eflect --pid [pid]
-java -jar eflect-profiler.jar --pid [pid]
+> eflect $command # watch [pid1] until it terminates
+  REPORT FOR PROCESS 25403 (fooCommand):
+     - observed from  [timestamp1] to [timestamp2]
+     - 50J / 2000J consumed
+     - 1.21 ± 0.15J over runtime
+     - top consuming methods:
+        + FooServer.fetchFoo   : (37%)
+        + FooServer.discardFoo : (12%)
+        + FooServer.fooToBar   : (7%)
+        ...
+> eflect --pid=$pid1 # watch [pid1] until it terminates
+  REPORT FOR PROCESS 25403 (fooClient):
+     - observed from  [timestamp1] to [timestamp2]   
+      ...
+> eflect --pid=$pid2 --time 30s # watch [pid2] for 30s
+  REPORT FOR PROCESS 25531 (fooServer):
+    - observed from  [timestamp1] to [timestamp2]   
+      ...
+> eflect --pid=$pid3 --output=log.txt # watch [pid2] for 30s
+ WROTE REPORT FOR PROCESS 243 (otherFooClient) to [path]/log.txt
 ```
 
-all collected profiles will be dumped to the provided location.
-
-<!-- I thought about this and here's what I propose for library analysis on machine learning:
-
-We should run each experiment, which would encompass the entire pipeline, on a workstation, an android emulator, and a physical device. There are two goals:
-Compare the runtime behavior/rankings. Comparing the same algorithm on multiple unique environments exposes information about the implementation differences, which is a goal for optimization. I know for a fact that the android implementations do not have all the Java APIs available in non-mobile systems. This is not a trivial difference and almost certainly requires a different optimization strategy.
-Develop some sort of "energy benchmark test". Most machine learning and blockchain algorithms have some bounds on energy consumption. We provide a benchmark framework such that users define the benchmark (similar to unit testing frameworks).
-The first two of these are easy (we've already done them). The third is not easy; thinking about it, it is actually quite large in magnitude.
-
-Let's say I implement a random forest. It's easy enough to write an automation suite that profiles it and provides a summary (already done). What is not easy is the evaluation of the run. Most studies of ML focus on a specific model (like the paper you shared). They frequently present that runtime and energy are correlated, so you can compute an energy complexity based on input size. This may be true when the model is totally isolated but that is not a real environment. Therefore, we should support the ability to run not just a model but an entire pipeline.
-
-Let's now add another piece to our pipeline, maybe an optimizer that uses boosting to mine the data further. Our system should be able to accomplish the following: first, individual units are profiled to get a footprint. Second, we test larger topologies. In the example I provided, the model has two pieces: the forest predictor and the boosting algorithm. We want to know how these pieces scale together and compare them to the individual cases. The goal is to produce a hermetic environment for energy evaluation.of programs.
-
-There are a number of reasons I think this is a strong direction:
-
-1) user-driven: all of the details can be provided by a user. All we do is automate the profiling and evaluation phases.
-
-2) scalability: we should be integratable with any environment. Being able to achieve this means that any system can be profiled regardless of implementation.
-
-3) flexibility: test frameworks tend to be user-friendly and act as a bootstrapper for a workload.
-
-We have also discussed energy debugging. This goes hand-in-hand with a test framework. The evaluation is just a user choice. I exercise my workload and the evaluation strategy can use finer grain techniques as needed to isolate behavior. This system I've described should be completely customizable (even the profiler if a user needs something more than what we provide).
-
-There is the additional challenge of our system being solely on Java. As we discussed, eflect's jiffies reconstruction is language-agnostic and is only a detail of a linux implementation. Therefore, if you have any energy data, you can produce a footprint externally. However this doesn't allow for method ranking which, at least to me, seems critical to a useful test framework for this kind of system. Perhaps there's no reason to worry about this because it might require a workforce beyond the three of us. -->
+This does not provide direct awareness, so the program still needs a signal from `eflect`. This does have the advantage of potentially being a lightweight tool that should be usable on any linux OS.
