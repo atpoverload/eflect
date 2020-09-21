@@ -3,23 +3,27 @@ package eflect;
 import static java.util.Collections.emptyList;
 
 import clerk.Profiler;
+import clerk.Clerk;
 import clerk.concurrent.PeriodicSamplingModule;
 import dagger.Component;
 import eflect.data.Sample;
+import java.io.File;
 
 /** A profiler that estimates the energy consumed by the current application. */
-public class EflectProfiler {
+public final class Eflect implements Profiler<Iterable<EnergyFootprint>> {
   @Component(modules = {EflectModule.class, PeriodicSamplingModule.class})
   interface ClerkFactory {
-    Profiler<Sample, Iterable<EnergyFootprint>> newClerk();
+    Clerk<Iterable<EnergyFootprint>> newClerk();
   }
 
-  private static final ClerkFactory clerkFactory = DaggerEflectProfiler_ClerkFactory.builder().build();
+  private static final ClerkFactory clerkFactory = DaggerEflect_ClerkFactory.builder().build();
 
-  private static Profiler clerk;
+  private Clerk<Iterable<EnergyFootprint>> clerk;
+
+  public Eflect() { }
 
   // starts a profiler if there is not one
-  public static void start() {
+  public void start() {
     if (clerk == null) {
       clerk = clerkFactory.newClerk();
       clerk.start();
@@ -27,12 +31,21 @@ public class EflectProfiler {
   }
 
   // stops the profiler if there is one
-  public static Iterable<EnergyFootprint> stop() {
+  public Iterable<EnergyFootprint> stop() {
     Iterable<EnergyFootprint> profile = emptyList();
     if (clerk != null) {
       profile = (Iterable<EnergyFootprint>) clerk.stop();
       clerk = null;
     }
     return profile;
+  }
+
+  public static void main(String[] args) throws Exception {
+    String pid = args[0];
+    File procPid = new File("/proc", args[0]);
+    Eflect eflect = new Eflect();
+    eflect.start();
+    while (procPid.exists()) { }
+    System.out.println("pid " + pid + " consumed " + eflect.stop());
   }
 }

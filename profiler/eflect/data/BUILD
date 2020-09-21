@@ -5,7 +5,7 @@ java_library(
   visibility = ["//visibility:public"],
   srcs = glob(["*.java"]),
   deps = [
-    "//src/eflect/utils",
+    "//profiler/eflect/utils",
     "@jRAPL",
   ]
 )

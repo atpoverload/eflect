@@ -40,7 +40,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
     name = "clerk",
-    commit = "df93badc5dc267d9cd66fba210b98d556e961dcd",
+    commit = "6455cb51742f55a36be2c8d48205dd72053047dc",
     shallow_since = "1600140669 -0600",
     remote = "https://github.com/timurbey/clerk.git",
 )

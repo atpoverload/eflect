@@ -8,7 +8,7 @@ import eflect.data.CpuSample;
 import eflect.data.RaplSample;
 import eflect.data.Sample;
 import eflect.data.TaskSample;
-import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /** Module to provide the eflect implementation. */
@@ -16,12 +16,12 @@ import java.util.function.Supplier;
 interface EflectModule {
   @Provides
   @DataSource
-  static Iterable<Supplier<Sample>> provideSources() {
-    return List.of(TaskSample::new, CpuSample::new, RaplSample::new);
+  static Set<Supplier<?>> provideSources() {
+    return Set.of(TaskSample::new, CpuSample::new, RaplSample::new);
   }
 
   @Provides
-  static Processor<Sample, Iterable<EnergyFootprint>> provideProcessor() {
+  static Processor<?, Iterable<EnergyFootprint>> provideProcessor() {
     return new EflectProcessor();
   }
 }
