@@ -34,4 +34,8 @@ public final class OsUtils {
     }
     return pid.get();
   }
+
+  public static void setProcessId(int process) {
+    pid.set(process);
+  }
 }

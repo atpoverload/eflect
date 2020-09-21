@@ -1,5 +1,6 @@
 package eflect;
 
+import static eflect.utils.OsUtils.setProcessId;
 import static java.util.Collections.emptyList;
 
 import clerk.Profiler;
@@ -32,20 +33,34 @@ public final class Eflect implements Profiler<Iterable<EnergyFootprint>> {
 
   // stops the profiler if there is one
   public Iterable<EnergyFootprint> stop() {
-    Iterable<EnergyFootprint> profile = emptyList();
+    Iterable<EnergyFootprint> profiles = emptyList();
     if (clerk != null) {
-      profile = (Iterable<EnergyFootprint>) clerk.stop();
+      profiles = (Iterable<EnergyFootprint>) clerk.stop();
       clerk = null;
     }
-    return profile;
+    return profiles;
+  }
+
+  public static double sum(Iterable<EnergyFootprint> profiles) {
+    double energy = 0;
+    for (EnergyFootprint profile: profiles) {
+      energy += profile.getEnergy();
+    }
+    return energy;
   }
 
   public static void main(String[] args) throws Exception {
     String pid = args[0];
     File procPid = new File("/proc", args[0]);
+    setProcessId(Integer.parseInt(pid));
+
     Eflect eflect = new Eflect();
     eflect.start();
     while (procPid.exists()) { }
-    System.out.println("pid " + pid + " consumed " + eflect.stop());
+    System.out.println(String.join(" ",
+      "pid",
+      pid,
+      "consumed",
+      String.format("%.2f", sum(eflect.stop())) + "J"));
   }
 }

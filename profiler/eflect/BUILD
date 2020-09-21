@@ -42,6 +42,7 @@ java_library(
     ":eflect",
     ":module",
     "//profiler/eflect/data",
+    "//profiler/eflect/utils",
     "@clerk//clerk:profiler",
     "@clerk//clerk/concurrent",
     "@clerk//clerk/concurrent:periodic_sampling",
@@ -55,5 +56,8 @@ java_binary(
   main_class = "eflect.Eflect",
   runtime_deps = [
     ":profiler",
-  ]
+  ],
+  resources = [
+    "@jRAPL//src/jrapl:libCPUScaler.so",
+  ],
 )
