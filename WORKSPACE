@@ -56,13 +56,13 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_r
 git_repository(
     name = "clerk",
     commit = "6455cb51742f55a36be2c8d48205dd72053047dc",
-    shallow_since = "1600140669 -0600",
+    shallow_since = "1600974126 -0600",
     remote = "https://github.com/timurbey/clerk.git",
 )
 
 git_repository(
     name = "jRAPL",
-    commit = "f91e91805b6859aef10f745c3a4881e15c60c5d5",
+    commit = "8447264da36454bc4163935c4013280e165b0d49",
     shallow_since = "1598918413 -0400",
     remote = "https://github.com/timurbey/jRAPL.git",
 )
