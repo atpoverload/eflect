@@ -6,6 +6,5 @@ java_library(
   srcs = glob(["*.java"]),
   deps = [
     "//profiler/eflect/utils",
-    "@jRAPL",
   ]
 )

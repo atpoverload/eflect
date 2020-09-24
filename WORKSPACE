@@ -1,5 +1,6 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# dagger deps
 RULES_JVM_EXTERNAL_TAG = "3.3"
 RULES_JVM_EXTERNAL_SHA = "d85951a92c0908c80bd8551002d66cb23c3434409c814179c0ff026b53544dab"
 
@@ -28,6 +29,20 @@ maven_install(
     repositories = DAGGER_REPOSITORIES,
 )
 
+# jmh deps
+http_archive(
+  name = "rules_jmh",
+  strip_prefix = "buchgr-rules_jmh-6ccf8d7",
+  url = "https://github.com/buchgr/rules_jmh/zipball/6ccf8d7b270083982e5c143935704b9f3f18b256",
+  type = "zip",
+  sha256 = "dbb7d7e5ec6e932eddd41b910691231ffd7b428dff1ef9a24e4a9a59c1a1762d",
+)
+
+load("@rules_jmh//:deps.bzl", "rules_jmh_deps")
+rules_jmh_deps()
+load("@rules_jmh//:defs.bzl", "rules_jmh_maven_deps")
+rules_jmh_maven_deps()
+
 load("@bazel_tools//tools/build_defs/repo:maven_rules.bzl", "maven_jar")
 
 maven_jar(
@@ -36,7 +51,7 @@ maven_jar(
     repository = "https://repo1.maven.org/maven2",
 )
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 
 git_repository(
     name = "clerk",
@@ -47,7 +62,7 @@ git_repository(
 
 git_repository(
     name = "jRAPL",
-    commit = "be6f46bccc52f5439947de1aba9bdca52401e471",
+    commit = "f91e91805b6859aef10f745c3a4881e15c60c5d5",
     shallow_since = "1598918413 -0400",
-    remote = "https://github.com/pl-eflect/jRAPL.git",
+    remote = "https://github.com/timurbey/jRAPL.git",
 )

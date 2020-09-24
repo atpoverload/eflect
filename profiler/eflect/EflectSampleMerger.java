@@ -1,8 +1,8 @@
 package eflect;
 
 import static eflect.utils.OsUtils.getProcessId;
-import static jrapl.util.EnergyCheckUtils.ENERGY_WRAP_AROUND;
-import static jrapl.util.EnergyCheckUtils.SOCKETS;
+import static jrapl.Rapl.SOCKET_COUNT;
+import static jrapl.Rapl.WRAP_AROUND_ENERGY;
 
 import clerk.Processor;
 import eflect.data.CpuSample;
@@ -21,30 +21,30 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
   private Instant start = Instant.MAX;
   private Instant end = Instant.MIN;
 
-  final int[] startApp = new int[SOCKETS];
-  final int[] startCpu = new int[SOCKETS];
-  final double[] startEnergy = new double[SOCKETS];
+  final int[] startApp = new int[SOCKET_COUNT];
+  final int[] startCpu = new int[SOCKET_COUNT];
+  final double[] startEnergy = new double[SOCKET_COUNT];
 
-  final int[] endApp = new int[SOCKETS];
-  final int[] endCpu = new int[SOCKETS];
-  final double[] endEnergy = new double[SOCKETS];
+  final int[] endApp = new int[SOCKET_COUNT];
+  final int[] endCpu = new int[SOCKET_COUNT];
+  final double[] endEnergy = new double[SOCKET_COUNT];
 
   /** Puts the sample data into the correct container and adjust the values. */
   @Override
   public void accept(Sample s) {
     // bad; think about another separation mechanism
     if (s instanceof TaskSample) {
-      for (int i = 0; i < SOCKETS; i++) {
+      for (int i = 0; i < SOCKET_COUNT; i++) {
         this.startApp[i] = ((TaskSample) s).getJiffies()[i];
         this.endApp[i] = ((TaskSample) s).getJiffies()[i];
       }
     } else if (s instanceof CpuSample) {
-      for (int i = 0; i < SOCKETS; i++) {
+      for (int i = 0; i < SOCKET_COUNT; i++) {
         this.startCpu[i] = ((CpuSample) s).getJiffies()[i];
         this.endCpu[i] = ((CpuSample) s).getJiffies()[i];
       }
     } else if (s instanceof RaplSample) {
-      for (int i = 0; i < SOCKETS; i++) {
+      for (int i = 0; i < SOCKET_COUNT; i++) {
         this.startEnergy[i] = ((RaplSample) s).getEnergy()[i];
         this.endEnergy[i] = ((RaplSample) s).getEnergy()[i];
       }
@@ -60,11 +60,11 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
   /** Compute an {@link EnergyFootprint} from the stored data. */
   @Override
   public EnergyFootprint get() {
-    double[] appEnergy = new double[SOCKETS];
-    for (int socket = 0; socket < SOCKETS; socket++) {
+    double[] appEnergy = new double[SOCKET_COUNT];
+    for (int socket = 0; socket < SOCKET_COUNT; socket++) {
       double energy = endEnergy[socket] - startEnergy[socket];
       if (energy < 0) {
-        energy += ENERGY_WRAP_AROUND;
+        energy += WRAP_AROUND_ENERGY;
       }
 
       int app = endApp[socket] - startApp[socket];
@@ -87,7 +87,7 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
   EflectSampleMerger merge(EflectSampleMerger other) {
     EflectSampleMerger merged = new EflectSampleMerger();
 
-    for (int socket = 0; socket < SOCKETS; socket++) {
+    for (int socket = 0; socket < SOCKET_COUNT; socket++) {
       merged.startApp[socket] = this.startApp[socket] == 0
         ? other.startApp[socket]
         : other.startApp[socket] == 0 ? this.startApp[socket]
@@ -119,10 +119,10 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
       return false;
     }
 
-    for (int socket = 0; socket < SOCKETS; socket++) {
+    for (int socket = 0; socket < SOCKET_COUNT; socket++) {
       double energy = endEnergy[socket] - startEnergy[socket];
       if (energy < 0) {
-        energy += ENERGY_WRAP_AROUND;
+        energy += WRAP_AROUND_ENERGY;
       }
       int app = endApp[socket] - startApp[socket];
       int cpu = endCpu[socket] - startCpu[socket];

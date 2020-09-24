@@ -5,7 +5,7 @@ java_library(
   visibility = ["//visibility:public"],
   srcs = glob(["*.java"]),
   deps = [
-    "@jRAPL",
+    "@jRAPL//src/java/jrapl",
     "@net_java_dev_jna_jna//jar",
   ]
 )

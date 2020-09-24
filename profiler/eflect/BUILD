@@ -15,7 +15,7 @@ java_library(
     "//profiler/eflect/data",
     "//profiler/eflect/utils",
     "@clerk//clerk",
-    "@jRAPL"
+    "@jRAPL//src/java/jrapl",
   ]
 )
 
