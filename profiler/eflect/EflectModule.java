@@ -16,8 +16,23 @@ import java.util.function.Supplier;
 public interface EflectModule {
   @Provides
   @DataSource
-  static Set<Supplier<?>> provideSources() {
-    return Set.of(TaskSample::new, CpuSample::new, RaplSample::new);
+  @IntoSet
+  static Supplier<?> provideTaskSource() {
+    return TaskSample::new;
+  }
+
+  @Provides
+  @DataSource
+  @IntoSet
+  static Supplier<?> provideCpuSource() {
+    return CpuSample::new;
+  }
+
+  @Provides
+  @DataSource
+  @IntoSet
+  static Supplier<?> provideRaplSource() {
+    return RaplSample::new;
   }
 
   @Provides
