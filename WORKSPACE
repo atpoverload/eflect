@@ -51,7 +51,7 @@ maven_jar(
     repository = "https://repo1.maven.org/maven2",
 )
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
     name = "clerk",
@@ -63,6 +63,6 @@ git_repository(
 git_repository(
     name = "jRAPL",
     commit = "8447264da36454bc4163935c4013280e165b0d49",
-    shallow_since = "1598918413 -0400",
+    shallow_since = "1600653593 -0600",
     remote = "https://github.com/timurbey/jRAPL.git",
 )

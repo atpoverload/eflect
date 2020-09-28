@@ -9,7 +9,7 @@ import java.util.TreeMap;
  * A processor that stores samples in timestamp-indexed storage and can
  * collapse samples into {@link EnergyFootprint}s.
  */
-final class EflectProcessor implements Processor<Sample, Iterable<EnergyFootprint>> {
+public final class EflectProcessor implements Processor<Sample, Iterable<EnergyFootprint>> {
   private TreeMap<Instant, EflectSampleMerger> data = new TreeMap<>();
 
   /** Places the sample in a sorted, timestamp-indexed bucket. */
