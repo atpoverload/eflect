@@ -4,6 +4,7 @@ import clerk.DataSource;
 import clerk.Processor;
 import dagger.Module;
 import dagger.Provides;
+import dagger.multibindings.IntoSet;
 import eflect.data.CpuSample;
 import eflect.data.RaplSample;
 import eflect.data.Sample;
