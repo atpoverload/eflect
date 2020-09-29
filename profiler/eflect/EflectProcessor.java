@@ -30,30 +30,32 @@ public final class EflectProcessor implements Processor<Sample, Iterable<EnergyF
    */
   @Override
   public Iterable<EnergyFootprint> get() {
-    ArrayList<EnergyFootprint> profiles = new ArrayList<>();
     int attempts = 0;
-    synchronized(this) {
-      EflectSampleMerger merger = new EflectSampleMerger();
+    ArrayList<EnergyFootprint> profiles = new ArrayList<>();
+    EflectSampleMerger merger = new EflectSampleMerger();
 
-      TreeMap<Instant, EflectSampleMerger> data;
-      synchronized (this) {
-        data = this.data;
-        this.data = new TreeMap<>();
+    TreeMap<Instant, EflectSampleMerger> data;
+    synchronized (this.data) {
+      data = this.data;
+      this.data = new TreeMap<>();
+    }
+
+    Instant lastTimestamp = Instant.now();
+    for (Instant timestamp: data.keySet()) {
+      merger = merger.merge(data.get(timestamp));
+      if (merger.valid()) {
+        profiles.add(merger.get());
+        merger = new EflectSampleMerger();
       }
+      lastTimestamp = timestamp;
+    }
 
-      Instant lastTimestamp = Instant.now();
-      for (Instant timestamp: data.keySet()) {
-        merger = merger.merge(data.get(timestamp));
-        if (merger.valid() || (attempts++ > 25 && merger.check())) {
-          profiles.add(merger.get());
-          merger = new EflectSampleMerger();
-        }
-        lastTimestamp = timestamp;
-      }
-
-      synchronized(data) {
-        merger = merger.merge(data.getOrDefault(lastTimestamp, new EflectSampleMerger()));
-        data.put(lastTimestamp, merger);
+    if (merger.check()) {
+      profiles.add(merger.get());
+    } else {
+      synchronized(this.data) {
+        merger = merger.merge(this.data.getOrDefault(lastTimestamp, new EflectSampleMerger()));
+        this.data.put(lastTimestamp, merger);
       }
     }
 
