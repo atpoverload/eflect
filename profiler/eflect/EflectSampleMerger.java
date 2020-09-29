@@ -132,4 +132,13 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
     }
     return true;
   }
+
+  /** Checks if the timestamps are valid. */
+  boolean check() {
+    if (TimeUtils.equal(start, Instant.MAX) || TimeUtils.equal(end, Instant.MIN)) {
+      return false;
+    }
+
+    return true;
+  }
 }

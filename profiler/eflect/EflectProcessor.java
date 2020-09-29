@@ -31,6 +31,7 @@ public final class EflectProcessor implements Processor<Sample, Iterable<EnergyF
   @Override
   public Iterable<EnergyFootprint> get() {
     ArrayList<EnergyFootprint> profiles = new ArrayList<>();
+    int attempts = 0;
     synchronized(this) {
       EflectSampleMerger merger = new EflectSampleMerger();
 
@@ -43,7 +44,7 @@ public final class EflectProcessor implements Processor<Sample, Iterable<EnergyF
       Instant lastTimestamp = Instant.now();
       for (Instant timestamp: data.keySet()) {
         merger = merger.merge(data.get(timestamp));
-        if (merger.valid()) {
+        if (merger.valid() || (attempts++ > 25 && merger.check())) {
           profiles.add(merger.get());
           merger = new EflectSampleMerger();
         }
