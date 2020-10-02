@@ -81,7 +81,7 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
   }
 
   /**
-   * Merges with another processor by taking the max and min of the values for
+   * Merges with another merger by taking the max and min of the values for
    * each field.
    */
   EflectSampleMerger merge(EflectSampleMerger other) {

@@ -66,3 +66,26 @@ git_repository(
     shallow_since = "1600653593 -0600",
     remote = "https://github.com/timurbey/jRAPL.git",
 )
+
+new_local_repository(
+    name = "async_profiler",
+    path = "/home/timur/projects/async-profiler",
+    build_file_content = """
+load("@rules_java//java:defs.bzl", "java_import")
+
+genrule(
+  name = "async-profiler-lib",
+  visibility = ["//visibility:public"],
+  cmd = "cp /home/timur/projects/async-profiler/build/libasyncProfiler.so $@",
+  outs = ["libasyncProfiler.so"],
+)
+
+java_import(
+    name = "async_profiler",
+    visibility = ["//visibility:public"],
+    jars = [
+      "build/async-profiler.jar"
+    ],
+)
+"""
+)
