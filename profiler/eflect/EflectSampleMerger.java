@@ -1,14 +1,13 @@
 package eflect;
 
-import static eflect.utils.OsUtils.getProcessId;
 import static jrapl.Rapl.SOCKET_COUNT;
 import static jrapl.Rapl.WRAP_AROUND_ENERGY;
 
 import clerk.Processor;
-import eflect.data.CpuSample;
+import eflect.data.ApplicationSample;
+import eflect.data.MachineSample;
 import eflect.data.RaplSample;
 import eflect.data.Sample;
-import eflect.data.TaskSample;
 import eflect.utils.TimeUtils;
 import java.time.Instant;
 /**
@@ -33,15 +32,15 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
   @Override
   public void accept(Sample s) {
     // bad; think about another separation mechanism
-    if (s instanceof TaskSample) {
+    if (s instanceof ApplicationSample) {
       for (int i = 0; i < SOCKET_COUNT; i++) {
-        this.startApp[i] = ((TaskSample) s).getJiffies()[i];
-        this.endApp[i] = ((TaskSample) s).getJiffies()[i];
+        this.startApp[i] = ((ApplicationSample) s).getJiffies()[i];
+        this.endApp[i] = ((ApplicationSample) s).getJiffies()[i];
       }
-    } else if (s instanceof CpuSample) {
+    } else if (s instanceof MachineSample) {
       for (int i = 0; i < SOCKET_COUNT; i++) {
-        this.startCpu[i] = ((CpuSample) s).getJiffies()[i];
-        this.endCpu[i] = ((CpuSample) s).getJiffies()[i];
+        this.startCpu[i] = ((MachineSample) s).getJiffies()[i];
+        this.endCpu[i] = ((MachineSample) s).getJiffies()[i];
       }
     } else if (s instanceof RaplSample) {
       for (int i = 0; i < SOCKET_COUNT; i++) {

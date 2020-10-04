@@ -5,11 +5,10 @@ import clerk.Processor;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
-import eflect.data.CpuSample;
+import eflect.data.ApplicationSample;
+import eflect.data.MachineSample;
 import eflect.data.RaplSample;
-import eflect.data.Sample;
-import eflect.data.TaskSample;
-import java.util.Set;
+import java.util.List;
 import java.util.function.Supplier;
 
 /** Module to provide the eflect implementation. */
@@ -18,15 +17,15 @@ public interface EflectModule {
   @Provides
   @DataSource
   @IntoSet
-  static Supplier<?> provideTaskSource() {
-    return TaskSample::new;
+  static Supplier<?> provideApplicationSource() {
+    return ApplicationSample::new;
   }
 
   @Provides
   @DataSource
   @IntoSet
-  static Supplier<?> provideCpuSource() {
-    return CpuSample::new;
+  static Supplier<?> provideMachineSource() {
+    return MachineSample::new;
   }
 
   @Provides
@@ -37,7 +36,7 @@ public interface EflectModule {
   }
 
   @Provides
-  static Processor<?, Iterable<EnergyFootprint>> provideProcessor() {
+  static Processor<?, List<EnergyFootprint>> provideProcessor() {
     return new EflectProcessor();
   }
 }

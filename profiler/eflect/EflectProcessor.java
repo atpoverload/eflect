@@ -4,12 +4,13 @@ import clerk.Processor;
 import eflect.data.Sample;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 /**
  * A processor that stores samples in timestamp-indexed storage and can
  * collapse samples into {@link EnergyFootprint}s.
  */
-public final class EflectProcessor implements Processor<Sample, Iterable<EnergyFootprint>> {
+public final class EflectProcessor implements Processor<Sample, List<EnergyFootprint>> {
   private TreeMap<Instant, EflectSampleMerger> data = new TreeMap<>();
 
   /** Places the sample in a sorted, timestamp-indexed bucket. */
@@ -29,14 +30,13 @@ public final class EflectProcessor implements Processor<Sample, Iterable<EnergyF
    * consumed, the invalid merged data is replaced into storage.
    */
   @Override
-  public Iterable<EnergyFootprint> get() {
-    int attempts = 0;
+  public List<EnergyFootprint> get() {
     ArrayList<EnergyFootprint> profiles = new ArrayList<>();
     EflectSampleMerger merger = new EflectSampleMerger();
 
-    TreeMap<Instant, EflectSampleMerger> data;
+    // this is a very fast lock but it just creates a new object; is this a problem?
+    TreeMap<Instant, EflectSampleMerger> data = this.data;
     synchronized (this.data) {
-      data = this.data;
       this.data = new TreeMap<>();
     }
 

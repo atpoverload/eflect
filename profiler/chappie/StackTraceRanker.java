@@ -11,15 +11,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.List;
 import java.util.TreeMap;
-import javax.inject.Inject;
 /**
 * Computes an estimate of application energy consumption from data across the
 * runtime. This implements the same logic used in our data processing codebase
 * (src/python/attribution) to compute runtime attribution. Data is stored in
 * a typed collection and picked up by a processing method.
 */
-public final class StackTraceRanker implements Processor<Object, Map<String, Double>> {
+public final class StackTraceRanker implements Processor<Object, List<String, Double>> {
   private final EflectProcessor eflect = new EflectProcessor();
 
   private TreeMap<Instant, ArrayList<String>> traces = new TreeMap<>();
@@ -43,8 +43,8 @@ public final class StackTraceRanker implements Processor<Object, Map<String, Dou
   }
 
   @Override
-  public Map<String, Double> get() {
-    HashMap<String, Double> rankings = new HashMap<>();
+  public List<String, Double> get() {
+    ArrayList<String, Double> rankings = new ArrayList<>();
 
     TreeMap<Instant, ArrayList<String>> traces = this.traces;
     synchronized(this.traces) {
@@ -61,14 +61,13 @@ public final class StackTraceRanker implements Processor<Object, Map<String, Dou
             break;
           }
         }
-
         if (TimeUtils.greaterThan(timestamp, footprint.getEnd())) {
           break;
         } else if (TimeUtils.atLeast(timestamp, footprint.getStart())) {
           ArrayList<String> methods = traces.get(timestamp);
           double energy = footprint.getEnergy() / methods.size();
           for (String method: methods) {
-            rankings.put(method, rankings.getOrDefault(method, 0.0) + energy);
+            rankings.add(method, energy);
           }
           timestamp = Instant.EPOCH;
         } else {
@@ -76,7 +75,6 @@ public final class StackTraceRanker implements Processor<Object, Map<String, Dou
         }
       }
     }
-
     return rankings;
   }
 }

@@ -9,17 +9,18 @@ import clerk.concurrent.PeriodicSamplingModule;
 import dagger.Component;
 import eflect.data.Sample;
 import java.io.File;
+import java.util.List;
 
 /** A profiler that estimates the energy consumed by the current application. */
-public final class Eflect implements Profiler<Iterable<EnergyFootprint>> {
+public final class Eflect implements Profiler<List<EnergyFootprint>> {
   @Component(modules = {EflectModule.class, PeriodicSamplingModule.class})
   interface ClerkFactory {
-    Clerk<Iterable<EnergyFootprint>> newClerk();
+    Clerk<List<EnergyFootprint>> newClerk();
   }
 
   private static final ClerkFactory clerkFactory = DaggerEflect_ClerkFactory.builder().build();
 
-  private Clerk<Iterable<EnergyFootprint>> clerk;
+  private Clerk<List<EnergyFootprint>> clerk;
 
   public Eflect() { }
 
@@ -32,10 +33,10 @@ public final class Eflect implements Profiler<Iterable<EnergyFootprint>> {
   }
 
   // stops the profiler if there is one
-  public Iterable<EnergyFootprint> stop() {
-    Iterable<EnergyFootprint> profiles = emptyList();
+  public List<EnergyFootprint> stop() {
+    List<EnergyFootprint> profiles = emptyList();
     if (clerk != null) {
-      profiles = (Iterable<EnergyFootprint>) clerk.stop();
+      profiles = (List<EnergyFootprint>) clerk.stop();
       clerk = null;
     }
     return profiles;
