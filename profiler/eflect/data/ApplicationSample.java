@@ -23,11 +23,11 @@ public class ApplicationSample implements Sample {
       pid,
       "task"));
     for (File task: tasks.listFiles()) {
-      try (BufferedReader reader = new BufferedReader(new FileReader(new File(task, "stat")))) {
-        if (!reader.ready()) {
-          continue;
-        }
-
+      File statFile = new File(task, "stat");
+      if (!statFile.canRead()) {
+        continue;
+      }
+      try (BufferedReader reader = new BufferedReader(new FileReader(statFile))) {
         String[] stats = reader.readLine().split(" ");
 
         int offset = stats.length - STAT_LENGTH;
