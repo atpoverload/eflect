@@ -13,19 +13,26 @@ import java.time.Instant;
 /**
  * Processor that merges jiffies and energy samples into a single footprint.
  *
- * This processor implements the eflect algorithm by tracking absolute values
+ * <p> This processor implements the eflect algorithm by tracking absolute values
  * from samples and computing the difference as needed.
  */
 final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
+  private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+
+  private static int cpuToSocket(int cpu) {
+    return cpu * SOCKET_COUNT / CPU_COUNT;
+  }
+
   private Instant start = Instant.MAX;
   private Instant end = Instant.MIN;
 
-  final int[] startApp = new int[SOCKET_COUNT];
-  final int[] startCpu = new int[SOCKET_COUNT];
+  // TODO(timur): abstract the domains somehow
+  final long[] startApp = new long[SOCKET_COUNT];
+  final long[] startCpu = new long[SOCKET_COUNT];
   final double[] startEnergy = new double[SOCKET_COUNT];
 
-  final int[] endApp = new int[SOCKET_COUNT];
-  final int[] endCpu = new int[SOCKET_COUNT];
+  final long[] endApp = new long[SOCKET_COUNT];
+  final long[] endCpu = new long[SOCKET_COUNT];
   final double[] endEnergy = new double[SOCKET_COUNT];
 
   /** Puts the sample data into the correct container and adjust the values. */
@@ -33,14 +40,18 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
   public void accept(Sample s) {
     // bad; think about another separation mechanism
     if (s instanceof ApplicationSample) {
-      for (int i = 0; i < SOCKET_COUNT; i++) {
-        this.startApp[i] = ((ApplicationSample) s).getJiffies()[i];
-        this.endApp[i] = ((ApplicationSample) s).getJiffies()[i];
+      long[] jiffies = ((ApplicationSample) s).getJiffies();
+      for (int i = 0; i < CPU_COUNT; i++) {
+        int socket = cpuToSocket(i);
+        this.startApp[socket] = jiffies[socket];
+        this.endApp[socket] = jiffies[socket];
       }
     } else if (s instanceof MachineSample) {
-      for (int i = 0; i < SOCKET_COUNT; i++) {
-        this.startCpu[i] = ((MachineSample) s).getJiffies()[i];
-        this.endCpu[i] = ((MachineSample) s).getJiffies()[i];
+      long[] jiffies = ((MachineSample) s).getJiffies();
+      for (int i = 0; i < CPU_COUNT; i++) {
+        int socket = cpuToSocket(i);
+        this.startCpu[socket] = jiffies[socket];
+        this.endCpu[socket] = jiffies[socket];
       }
     } else if (s instanceof RaplSample) {
       for (int i = 0; i < SOCKET_COUNT; i++) {
@@ -66,8 +77,8 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
         energy += WRAP_AROUND_ENERGY;
       }
 
-      int app = endApp[socket] - startApp[socket];
-      int cpu = endCpu[socket] - startCpu[socket];
+      long app = endApp[socket] - startApp[socket];
+      long cpu = endCpu[socket] - startCpu[socket];
 
       // compute the attribution factor
       double factor = 0;
@@ -123,8 +134,8 @@ final class EflectSampleMerger implements Processor<Sample, EnergyFootprint> {
       if (energy < 0) {
         energy += WRAP_AROUND_ENERGY;
       }
-      int app = endApp[socket] - startApp[socket];
-      int cpu = endCpu[socket] - startCpu[socket];
+      long app = endApp[socket] - startApp[socket];
+      long cpu = endCpu[socket] - startCpu[socket];
       if (energy == 0 || cpu == 0 || app == 0 || app > cpu) {
         return false;
       }

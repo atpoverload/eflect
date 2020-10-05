@@ -14,8 +14,8 @@ public class ApplicationSample implements Sample {
   private static final int CPU_INDEX = 38;
   private static final int[] JIFFY_INDICES = new int[] {13, 14};
 
-  private static int[] readApplicationJiffies() {
-    int[] jiffies = new int[CPU_COUNT];
+  private static long[] readApplicationJiffies() {
+    long[] jiffies = new long[CPU_COUNT];
     String pid = Integer.toString(getProcessId());
     File tasks = new File(String.join(
       File.separator,
@@ -33,7 +33,7 @@ public class ApplicationSample implements Sample {
         int offset = stats.length - STAT_LENGTH;
         int cpu = Integer.parseInt(stats[CPU_INDEX + offset]);
         for (int i: JIFFY_INDICES) {
-          jiffies[cpu] += Integer.parseInt(stats[i + offset]);
+          jiffies[cpu] += Long.parseLong(stats[i + offset]);
         }
       } catch (Exception e) {
         e.printStackTrace();
@@ -42,7 +42,7 @@ public class ApplicationSample implements Sample {
     return jiffies;
   }
 
-  private final int[] jiffies;
+  private final long[] jiffies;
   private final Instant timestamp;
 
   public ApplicationSample() {
@@ -50,7 +50,7 @@ public class ApplicationSample implements Sample {
     this.timestamp = Instant.now();
   }
 
-  public int[] getJiffies() {
+  public long[] getJiffies() {
     return jiffies;
   }
 
