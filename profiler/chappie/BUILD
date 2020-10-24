@@ -1,4 +1,4 @@
-load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+load("@rules_java//java:defs.bzl", "java_library", "java_binary")
 load("@dagger//:workspace_defs.bzl", "dagger_rules")
 
 dagger_rules()
@@ -7,50 +7,32 @@ java_library(
   name = "chappie",
   visibility = ["//visibility:public"],
   srcs = [
-    "StackTraceRanker.java",
+    "Eflect.java"
   ],
   deps = [
-    "//profiler/eflect",
-    "//profiler/eflect/data",
-    "//profiler/eflect/utils",
-    "@clerk//clerk",
-    ":dagger",
-  ]
-)
-
-java_library(
-  name = "module",
-  srcs = [
-    "StackTraceRankingModule.java",
-  ],
-  visibility = ["//visibility:public"],
-  deps = [
-    ":chappie",
-    "//profiler/eflect/data",
-    "@async_profiler",
-    "@clerk//clerk",
+    "//profiler/chappie/data:module",
+    "//profiler/chappie/processing:module",
+    "//profiler/eflect:footprint",
+    "//profiler/eflect/data:module",
+    "@clerk//clerk/util:logger",
+    "@clerk//clerk/inject:module",
+    "@clerk//clerk/inject:periodic_sampling_module",
     ":dagger",
   ],
-)
-
-java_binary(
-  name = "rank_it",
-  visibility = ["//visibility:public"],
-  main_class = "chappie.ChappieProfiler",
-  srcs = [
-    "Chappie.java",
-  ],
-  deps = [
-    ":module",
-    "//profiler/eflect",
-    "@async_profiler",
-    "@clerk//clerk:profiler",
-    "@clerk//clerk/concurrent",
-    "@clerk//clerk/concurrent:periodic_sampling",
-    ":dagger",
+  exports = [
+    "//profiler/eflect:footprint",
   ],
   resources = [
     "@async_profiler//:async-profiler-lib",
     "@jRAPL//src/jrapl:libCPUScaler.so",
+  ],
+)
+
+java_binary(
+  name = "chappie_profiler",
+  visibility = ["//visibility:public"],
+  main_class = "chappie.Eflect",
+  runtime_deps = [
+    ":chappie",
   ],
 )

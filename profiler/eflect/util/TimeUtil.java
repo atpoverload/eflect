@@ -1,10 +1,10 @@
-package eflect.utils;
+package eflect.util;
 
 import java.time.Instant;
 
-/** Utilities providing algebra for {@link Instant}s. */
-public final class TimeUtils {
-  // boolean
+/** Utilities for algebra with {@link Instant}s. */
+public final class TimeUtil {
+  // boolean comparisons
   public static boolean atMost(Instant first, Instant second) {
     return first.compareTo(second) <= 0;
   }
@@ -25,6 +25,7 @@ public final class TimeUtils {
     return first.compareTo(second) < 0;
   }
 
+  // algebraic comparisons
   public static Instant max(Instant first, Instant second) {
     if (greaterThan(first, second)) {
       return first;
@@ -33,7 +34,6 @@ public final class TimeUtils {
     }
   }
 
-  // numeric
   public static Instant max(Instant first, Instant... others) {
     Instant minTimestamp = first;
     for (Instant other: others) {
@@ -58,21 +58,5 @@ public final class TimeUtils {
     return minTimestamp;
   }
 
-
-  // this is probably unsafe to have
-  public static Instant maxBelowUpper(Instant first, Instant second) {
-    if ((greaterThan(first, second) && !equal(first, Instant.MAX)) || equal(second, Instant.MAX)) {
-      return first;
-    } else {
-      return second;
-    }
-  }
-
-  public static Instant minAboveLower(Instant first, Instant second) {
-    if ((lessThan(first, second) && !equal(first, Instant.MIN)) || equal(second, Instant.MIN)) {
-      return first;
-    } else {
-      return second;
-    }
-  }
+  private TimeUtil() {}
 }

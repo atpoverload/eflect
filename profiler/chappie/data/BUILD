@@ -8,20 +8,22 @@ java_library(
   visibility = ["//visibility:public"],
   srcs = glob(
     ["*.java"],
-    exclude = ["EflectDataModule.java"]
+    exclude = ["ChappieDataModule.java"],
   ),
   deps = [
+    "//profiler/chappie/util",
+    "//profiler/eflect/data",
     "//profiler/eflect/util",
-    "@jRAPL//src/java/jrapl",
   ],
 )
 
 java_library(
   name = "module",
   visibility = ["//visibility:public"],
-  srcs = ["EflectDataModule.java"],
+  srcs = ["ChappieDataModule.java"],
   deps = [
     ":data",
+    "//profiler/eflect/util",
     "@clerk//clerk/inject:component",
     ":dagger",
   ],

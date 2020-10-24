@@ -29,6 +29,60 @@ maven_install(
     repositories = DAGGER_REPOSITORIES,
 )
 
+load("@bazel_tools//tools/build_defs/repo:maven_rules.bzl", "maven_jar")
+
+maven_jar(
+    name = "net_java_dev_jna_jna",
+    artifact = "net.java.dev.jna:jna:5.4.0",
+    repository = "https://repo1.maven.org/maven2",
+)
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "clerk",
+    commit = "6c1fd1cfe6776d1708a7af70453bebd5d7e07912",
+    shallow_since = "1600974126 -0600",
+    remote = "https://github.com/timurbey/clerk.git",
+)
+
+# TODO(timurbey): update when we have a working draft of jrapl
+git_repository(
+    name = "jRAPL",
+    commit = "6c3c08f796bf21ed4668d0cb690ce1732d634181",
+    shallow_since = "1600653593 -0600",
+    remote = "https://github.com/timurbey/jRAPL.git",
+)
+
+# TODO(timurbey): get the build rule to directly build instead of the genrule
+new_local_repository(
+    name = "async_profiler",
+    path = "/home/timur/sandbox/async-profiler",
+    build_file_content = """
+load("@rules_java//java:defs.bzl", "java_import")
+
+genrule(
+  name = "async-profiler-lib",
+  visibility = ["//visibility:public"],
+  cmd = "cp /home/timur/sandbox/async-profiler/build/libasyncProfiler.so $@",
+  outs = ["libasyncProfiler.so"],
+)
+
+java_import(
+    name = "async_profiler",
+    visibility = ["//visibility:public"],
+    jars = [
+      "build/async-profiler.jar"
+    ],
+)
+"""
+)
+
+http_archive(
+    name = "dacapo",
+    urls = ["https://clerk-deps.s3.amazonaws.com/dacapo.zip"],
+)
+
 # jmh deps
 http_archive(
   name = "rules_jmh",
@@ -42,50 +96,3 @@ load("@rules_jmh//:deps.bzl", "rules_jmh_deps")
 rules_jmh_deps()
 load("@rules_jmh//:defs.bzl", "rules_jmh_maven_deps")
 rules_jmh_maven_deps()
-
-load("@bazel_tools//tools/build_defs/repo:maven_rules.bzl", "maven_jar")
-
-maven_jar(
-    name = "net_java_dev_jna_jna",
-    artifact = "net.java.dev.jna:jna:5.4.0",
-    repository = "https://repo1.maven.org/maven2",
-)
-
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-
-git_repository(
-    name = "clerk",
-    commit = "6455cb51742f55a36be2c8d48205dd72053047dc",
-    shallow_since = "1600974126 -0600",
-    remote = "https://github.com/timurbey/clerk.git",
-)
-
-git_repository(
-    name = "jRAPL",
-    commit = "8447264da36454bc4163935c4013280e165b0d49",
-    shallow_since = "1600653593 -0600",
-    remote = "https://github.com/timurbey/jRAPL.git",
-)
-
-new_local_repository(
-    name = "async_profiler",
-    path = "/home/timur/projects/async-profiler",
-    build_file_content = """
-load("@rules_java//java:defs.bzl", "java_import")
-
-genrule(
-  name = "async-profiler-lib",
-  visibility = ["//visibility:public"],
-  cmd = "cp /home/timur/projects/async-profiler/build/libasyncProfiler.so $@",
-  outs = ["libasyncProfiler.so"],
-)
-
-java_import(
-    name = "async_profiler",
-    visibility = ["//visibility:public"],
-    jars = [
-      "build/async-profiler.jar"
-    ],
-)
-"""
-)

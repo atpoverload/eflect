@@ -4,9 +4,8 @@ import static jrapl.Rapl.getEnergyStats;
 import static jrapl.Rapl.SOCKET_COUNT;
 
 import java.time.Instant;
-import java.util.Arrays;
 
-/** Snapshot of the machine's rapl counters. */
+/** Snapshot of the machine's energy from rapl. */
 public final class RaplSample implements Sample {
   // flattens jRAPL's output into just energy
   private static double[] readEnergy() {
@@ -30,12 +29,17 @@ public final class RaplSample implements Sample {
     this.timestamp = Instant.now();
   }
 
-  public double[] getEnergy() {
-    return energy;
+  @Override
+  public String[] getStats() {
+    return new String[0];
   }
 
   @Override
   public Instant getTimestamp() {
     return timestamp;
+  }
+
+  public double[] getEnergy() {
+    return energy;
   }
 }

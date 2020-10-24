@@ -11,6 +11,7 @@ java_library(
   visibility = ["//visibility:public"],
   deps = [
     "@clerk//clerk",
+    "@clerk//clerk/concurrent:periodic_sampling",
     ":dagger",
   ],
 )
@@ -23,6 +24,7 @@ java_binary(
   deps = [
     ":module",
     "@clerk//clerk:profiler",
+    "@clerk//clerk/concurrent",
     "@clerk//clerk/concurrent:periodic_sampling",
     ":dagger"
   ],

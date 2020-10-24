@@ -4,13 +4,12 @@ import static java.util.Collections.emptyList;
 
 import clerk.Clerk;
 import clerk.Profiler;
-import clerk.concurrent.PeriodicSamplingModule;
 import dagger.Component;
 import java.io.File;
 
 /** A profiler that estimates the energy consumed by the current application. */
 public final class CalmnessProfiler implements Profiler<Iterable<long[]>> {
-  @Component(modules = {CalmnessModule.class, PeriodicSamplingModule.class})
+  @Component(modules = {CalmnessModule.class})
   interface ClerkFactory {
     Clerk<Iterable<long[]>> newClerk();
   }

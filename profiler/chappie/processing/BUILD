@@ -4,25 +4,30 @@ load("@dagger//:workspace_defs.bzl", "dagger_rules")
 dagger_rules()
 
 java_library(
-  name = "data",
+  name = "processing",
   visibility = ["//visibility:public"],
   srcs = glob(
     ["*.java"],
-    exclude = ["EflectDataModule.java"]
+    exclude = ["ChappieProcessingModule.java"],
   ),
   deps = [
+    "//profiler/chappie/data",
+    "//profiler/eflect:footprint",
+    "//profiler/eflect/data",
+    "//profiler/eflect/processing",
     "//profiler/eflect/util",
-    "@jRAPL//src/java/jrapl",
+    "@clerk//clerk",
   ],
 )
+
 
 java_library(
   name = "module",
   visibility = ["//visibility:public"],
-  srcs = ["EflectDataModule.java"],
+  srcs = ["ChappieProcessingModule.java"],
   deps = [
-    ":data",
-    "@clerk//clerk/inject:component",
+    ":processing",
+    "@clerk//clerk",
     ":dagger",
   ],
 )

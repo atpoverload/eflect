@@ -3,21 +3,22 @@ package eflect;
 import java.time.Duration;
 import java.time.Instant;
 
-/** Representation of the application's energy usage over a time interval. */
-// TODO(timur): this can't be usefully exchanged.
-public final class EnergyFootprint {
+// TODO(timurbey): find an exchangable data format
+/** Abstract representation of the application's energy consumption. */
+public abstract class EnergyFootprint<D> {
   private final Instant start;
   private final Instant end;
   private final Duration duration;
-  private final double[] energy;
 
-  EnergyFootprint(Instant start, Instant end, double[] energy) {
+  public EnergyFootprint(Instant start, Instant end) {
     this.start = start;
     this.end = end;
     this.duration = Duration.between(start, end);
-
-    this.energy = energy;
   }
+
+  public abstract double getEnergy();
+
+  public abstract double getEnergy(D domain);
 
   public Instant getStart() {
     return start;
@@ -27,23 +28,11 @@ public final class EnergyFootprint {
     return end;
   }
 
-  public double getEnergy() {
-    double energy = 0;
-    for (int i = 0; i < this.energy.length; i++) {
-      energy += this.energy[i];
-    }
-    return energy;
-  }
-
-  public double getEnergy(int socket) {
-    return this.energy[socket];
-  }
-
   public double getPower() {
     return getEnergy() / duration.toMillis() / 1000;
   }
 
-  public double getPower(int socket) {
-    return getEnergy(socket) / duration.toMillis() / 1000;
+  public double getPower(D domain) {
+    return getEnergy(domain) / duration.toMillis() / 1000;
   }
 }

@@ -1,5 +1,9 @@
 package eflect.calmness;
 
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
+
+import clerk.concurrent.PeriodicSamplingModule;
+import clerk.concurrent.SchedulingPeriod;
 import clerk.DataSource;
 import clerk.Processor;
 import dagger.Module;
@@ -11,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.function.Supplier;
+import java.time.Duration;
+import java.util.concurrent.ScheduledExecutorService;
 /**
  * Module to provide calmness data, which is the current frequency values of the current linux system.
  *
@@ -18,12 +24,12 @@ import java.util.function.Supplier;
  *     extending this implementation across linux implementations.
  */
 @Module
-abstract class CalmnessModule {
-  private static int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-  private static final String FREQS_PREFIX = "/sys/devices/system/cpu";
-  private static final String FREQS_SUFFIX = "cpufreq/cpuinfo_cur_freq";
+interface CalmnessModule extends PeriodicSamplingModule {
+  static int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+  static final String FREQS_PREFIX = "/sys/devices/system/cpu";
+  static final String FREQS_SUFFIX = "cpufreq/cpuinfo_cur_freq";
 
-  private static long[] getFreqs() {
+  static long[] getFreqs() {
     long[] freqs = new long[CPU_COUNT];
     for (int i = 0; i < CPU_COUNT; i++) {
       try {
@@ -39,6 +45,17 @@ abstract class CalmnessModule {
       }
     }
     return freqs;
+  }
+
+  @Provides
+  @SchedulingPeriod
+  static Duration provideSamplingRate() {
+    return Duration.ofMillis(512);
+  }
+
+  @Provides
+  static ScheduledExecutorService provideExecutor() {
+    return newSingleThreadScheduledExecutor();
   }
 
   @Provides
