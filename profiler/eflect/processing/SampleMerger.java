@@ -6,15 +6,15 @@ import static jrapl.Rapl.WRAP_AROUND_ENERGY;
 import clerk.Processor;
 import eflect.data.MachineSample;
 import eflect.data.RaplSample;
-import eflect.data.TaskSample;
 import eflect.data.Sample;
+import eflect.data.TaskSample;
 import eflect.util.TimeUtil;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.stream.Stream;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Processor that merges samples into a footprint with task granularity. */
 final class SampleMerger implements Processor<Sample, TaskEnergyFootprint> {
@@ -24,11 +24,11 @@ final class SampleMerger implements Processor<Sample, TaskEnergyFootprint> {
     return cpu * SOCKET_COUNT / CPU_COUNT;
   }
 
-  private static long nonZeroMin(long first, long second){
+  private static long nonZeroMin(long first, long second) {
     return first == 0 ? second : second == 0 ? first : Math.min(first, second);
   }
 
-  private static double nonZeroMin(double first, double second){
+  private static double nonZeroMin(double first, double second) {
     return first == 0 ? second : second == 0 ? first : Math.min(first, second);
   }
 
@@ -51,13 +51,13 @@ final class SampleMerger implements Processor<Sample, TaskEnergyFootprint> {
   @Override
   public void add(Sample s) {
     if (s instanceof TaskSample) {
-      for (String stat: s.getStats()) {
+      for (String stat : s.getStats()) {
         TaskRecord task = new TaskRecord(stat);
         taskMin.put(task.tid, task);
         taskMax.put(task.tid, task);
       }
     } else if (s instanceof MachineSample) {
-      for (String stat: s.getStats()) {
+      for (String stat : s.getStats()) {
         MachineRecord machine = new MachineRecord(stat);
         cpuMin[machine.socket] += machine.jiffies;
         cpuMax[machine.socket] += machine.jiffies;
@@ -81,8 +81,8 @@ final class SampleMerger implements Processor<Sample, TaskEnergyFootprint> {
   /**
    * Compute an {@link TaskEnergyFootprint} from the stored data.
    *
-   * <p>There is no guarantee the result will be meaningful. Consult {@code valid()} and
-   * {@code check()} to interpret the footprint.
+   * <p>There is no guarantee the result will be meaningful. Consult {@code valid()} and {@code
+   * check()} to interpret the footprint.
    */
   @Override
   public TaskEnergyFootprint process() {
@@ -95,16 +95,16 @@ final class SampleMerger implements Processor<Sample, TaskEnergyFootprint> {
       if (energy[socket] < 0) {
         energy[socket] += WRAP_AROUND_ENERGY;
       }
-
       cpu[socket] = cpuMax[socket] - cpuMin[socket];
     }
 
-    for (long tid: taskMin.keySet()) {
+    for (long tid : taskMin.keySet()) {
       TaskRecord start = taskMin.get(tid);
       TaskRecord end = taskMax.get(tid);
       int socket = cpuToSocket(start.cpu);
       if (cpu[socket] > 0 && end.jiffies - start.jiffies > 0) {
-        taskEnergy.put(tid, energy[socket] * Math.min(end.jiffies - start.jiffies, cpu[socket]) / cpu[socket]);
+        taskEnergy.put(
+            tid, energy[socket] * Math.min(end.jiffies - start.jiffies, cpu[socket]) / cpu[socket]);
       }
     }
 
@@ -116,9 +116,10 @@ final class SampleMerger implements Processor<Sample, TaskEnergyFootprint> {
     SampleMerger merged = new SampleMerger();
 
     // TODO(timurbey): there really should be a better way to unite these
-    Set<Long> tasks = Stream.concat(taskMin.keySet().stream(), other.taskMin.keySet().stream())
-        .collect(Collectors.toSet());
-    for (long tid: tasks) {
+    Set<Long> tasks =
+        Stream.concat(taskMin.keySet().stream(), other.taskMin.keySet().stream())
+            .collect(Collectors.toSet());
+    for (long tid : tasks) {
       TaskRecord minRecord;
       if (!other.taskMin.containsKey(tid)) {
         minRecord = taskMin.get(tid);
@@ -213,7 +214,7 @@ final class SampleMerger implements Processor<Sample, TaskEnergyFootprint> {
       String name = String.join(" ", Arrays.copyOfRange(stats, 1, 2 + offset));
       this.name = name.substring(1, name.length() - 1);
       long jiffies = 0;
-      for (int i: JIFFY_INDICES) {
+      for (int i : JIFFY_INDICES) {
         jiffies += Long.parseLong(stats[i + offset]);
       }
       this.jiffies = jiffies;
@@ -230,7 +231,7 @@ final class SampleMerger implements Processor<Sample, TaskEnergyFootprint> {
       String[] stats = stat.split(" ");
       this.socket = cpuToSocket(Integer.parseInt(stats[0].substring(3)));
       long jiffies = 0;
-      for (int i: JIFFY_INDICES) {
+      for (int i : JIFFY_INDICES) {
         jiffies += Long.parseLong(stats[i]);
       }
       this.jiffies = jiffies;

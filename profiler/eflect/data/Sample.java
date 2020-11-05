@@ -3,10 +3,20 @@ package eflect.data;
 import java.time.Instant;
 
 /** Interface for a piece of timestamped data. */
-public interface Sample {
-  String[] getStats();
+public abstract class Sample {
+  private final String[] stats;
+  private final Instant timestamp;
 
-  default Instant getTimestamp() {
-    return Instant.EPOCH;
+  public Sample(String[] stats, Instant timestamp) {
+    this.stats = stats;
+    this.timestamp = timestamp;
+  }
+
+  public final String[] getStats() {
+    return stats;
+  }
+
+  public final Instant getTimestamp() {
+    return timestamp;
   }
 }

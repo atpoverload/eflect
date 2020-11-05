@@ -1,16 +1,16 @@
 package eflect.data;
 
-import java.time.Instant;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.time.Instant;
 
 /** Snapshot of the machine's jiffies as described by /proc/stat. */
-public final class MachineSample implements Sample {
+public final class MachineSample extends Sample {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
   private static final String STAT_FILE = String.join(File.separator, "/proc", "stat");
 
-  private static String[] readMachineStats() {
+  static MachineSample readMachineStats() {
     String[] stats = new String[CPU_COUNT];
     try (BufferedReader reader = new BufferedReader(new FileReader(new File(STAT_FILE)))) {
       reader.readLine(); // first line is total summary; we'll need by socket
@@ -20,25 +20,11 @@ public final class MachineSample implements Sample {
     } catch (Exception e) {
       e.printStackTrace();
     } finally {
-      return stats;
+      return new MachineSample(stats, Instant.now());
     }
   }
 
-  private final String[] stats;
-  private final Instant timestamp;
-
-  public MachineSample() {
-    this.stats = readMachineStats();
-    this.timestamp = Instant.now();
-  }
-
-  @Override
-  public String[] getStats() {
-    return stats;
-  }
-
-  @Override
-  public Instant getTimestamp() {
-    return timestamp;
+  MachineSample(String[] stats, Instant timestamp) {
+    super(stats, timestamp);
   }
 }

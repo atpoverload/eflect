@@ -21,9 +21,9 @@ java_library(
     ":footprint",
     "//profiler/eflect/data:module",
     "//profiler/eflect/processing:module",
-    "@clerk//clerk/util:logger",
-    "@clerk//clerk/inject:module",
-    "@clerk//clerk/inject:periodic_sampling_module",
+    "@clerk//clerk/util",
+    "@clerk//clerk/inject:clerk",
+    "@clerk//clerk/inject:executor_module",
     ":dagger",
   ],
   exports = [

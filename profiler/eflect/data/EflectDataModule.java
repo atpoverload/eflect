@@ -3,7 +3,8 @@ package eflect.data;
 import clerk.inject.ClerkComponent;
 import dagger.Module;
 import dagger.Provides;
-import dagger.multibindings.IntoSet;
+import dagger.multibindings.IntoMap;
+import dagger.multibindings.StringKey;
 import java.util.function.Supplier;
 
 /** Module to provide the eflect data sources. */
@@ -11,22 +12,25 @@ import java.util.function.Supplier;
 public interface EflectDataModule {
   @Provides
   @ClerkComponent
-  @IntoSet
+  @IntoMap
+  @StringKey("task_jiffies_source")
   static Supplier<?> provideTaskData() {
-    return TaskSample::new;
+    return TaskSample::readTaskStats;
   }
 
   @Provides
   @ClerkComponent
-  @IntoSet
+  @IntoMap
+  @StringKey("machine_jiffies_source")
   static Supplier<?> provideMachineData() {
-    return MachineSample::new;
+    return MachineSample::readMachineStats;
   }
 
   @Provides
   @ClerkComponent
-  @IntoSet
+  @IntoMap
+  @StringKey("rapl_source")
   static Supplier<?> provideRaplData() {
-    return RaplSample::new;
+    return RaplSample::readEnergy;
   }
 }

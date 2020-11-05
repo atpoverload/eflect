@@ -15,6 +15,7 @@ java_library(
     "//profiler/eflect/data",
     "//profiler/eflect/util",
     "@clerk//clerk",
+    "@clerk//clerk:processor",
     "@jRAPL//src/java/jrapl",
   ],
 )
@@ -25,7 +26,9 @@ java_library(
   srcs = ["EflectProcessingModule.java"],
   deps = [
     ":processing",
+    "//profiler/eflect:footprint",
     "@clerk//clerk",
+    "@clerk//clerk:processor",
     ":dagger",
   ],
 )
