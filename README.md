@@ -1,58 +1,49 @@
-# eflect benchmark suite
+# `eflect`
 
-This document describes some high-level designs for a macrobenchmark suite that uses [`eflect`]() to analyze Java runtimes. This work may be an extension of the [`jmh`](https://openjdk.java.net/projects/code-tools/jmh) to enforce a hermetic environment. We want to support as many flavors of Java as possible and potentially begin exploring language-agnostic profiling.
+`eflect` is an energy accounting system for Java applications. `eflect` uses cross-layer periodic sampling to produce application-granular energy data. `eflect` currently supports systems that use `/proc` and the `msr` module.
 
-## profiling methods
+## Data
 
-This framework would use [`eflect`]() to enforce energy-awareness in any Java application. The benchmark suite can mimic other testing frameworks to allow integration into commonly used toolkits. The end goal would be a testing framework that could be used anonymously. This is the primary reason I champion [`dagger`] because it can provide us with that hook.
+`eflect` produces `EnergyFootprint`s of application threads:
 
-We can also explore implementations to improve performance and/or provide external profiling by only monitoring the OS. Here are the potential goals that could be worked towards:
+```
+{
+  "id": 1,
+  "name": "Thread-1",
+  "energy": 100,
+  "start": 0,
+  "end": 1000,
+  "stack_trace": ["top_of_stack", "bottom_of_stack"]
+}
+```
 
- - centralized energy-awareness; potential integration into `/proc/[pid]/stat` as a module
- - extend `rapl` and `eflect` support to other architectures; DI is powerful here because it can remove bloat from enum-based approaches with compile-time correctness.
- - runtime decoupling of `eflect` and the application
- - language-agnostic data containers that are optimized for exchange (not the CSVs I have been using)
+The output data can be stored as a `.csv`, `.json`, or `.proto`, or it can be written to a sql database.
 
-I will admit that some of the work involved in the external implementation tasks feel moderately above my current skill level. Some of them are almost certainly too ambitious as well.
+## Integration
 
-## Pure Java API
-
-I am going to give a high-level picture of what the Java benchmarking API could look like. First, we would like to use Java's annotations to link together the stages of a benchmark; the reason to do this is to guarantee compile-time correctness and removal of potential performance loss from calling the benchmark method (same as a unit test). An example of an energy footprint evaluation system could look like:
+You can integrate `eflect` into your application directly:
 
 ```java
-private final double error = 5.0;
+Eflect eflect = Eflect.newProfiler();
+eflect.start();
+myProgram.run();
+eflect.stop();
+Collection<EnergyFootprint> eflect.read();
+```
 
-@Param({"25", "50", "75"})
-public int n;
+or with the `jmh`:
 
-@Param({"25.0", "30.0", "40.0"})
-public double SLA;
-
+```java
 @Benchmark
-public void workload(int n, double SLA) {
-  assertThat(fibonacci(n)).isWithin(SLA, error);
+public void test1() {
+  myProgram.run();
+}
+
+public static void main(String[] args) throws RunnerException {
+  Options opt = new OptionsBuilder().addProfiler(EflectProfiler.class).build();
+  new Runner(opt).run();
 }
 ```
-
-This would assert that the computation of the n-th fibonacci number's implementation is within 5J of a group of SLAs. This could be extended to deal with different kinds of data or even to integrate optimizations:
-
-```java
-@Benchmark(profile = {MethodRanking.class})
-public void workload(int n, MethodRanking ranking) {
-  assertThat(fibonacci(n)).isWithin(ranking, error);
-}
-
-@Benchmark(profile = {EnergyFootprint.class})
-public void workload(int n, Knob[] knobs) {
-  optimize(fibonacci(n)).with(knobs);
-}
-```
-
-The `jmh` also has options to fork the runtime, which would create a fresh one. This could potentially resolve some of the issues we saw previously with mismatched method rankings. I have a lot more reading and testing to do before I can have a better understanding of how to do such a thing, let alone if it is even truly possible.
-
-This work would be able to support library analysis because we would be creating a reliable environment to evaluate provided applications instead of tuning the benchmark itself.
-
-These are very rough examples and again may be beyond the scope of what we can realistically do.
 
 ## External profiling
 
