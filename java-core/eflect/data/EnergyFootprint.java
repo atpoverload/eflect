@@ -40,7 +40,7 @@ public final class EnergyFootprint {
       "start: " + start,
       "end: " + end,
       "domain: " + domain,
-      "energy: " + energy);
+      "energy: " + energy) + System.lineSeparator();
   }
 
   public static final class Builder {
