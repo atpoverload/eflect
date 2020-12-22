@@ -28,22 +28,24 @@ public abstract class EflectProcessor implements Processor<Sample, Collection<En
   public final Collection<EnergyFootprint> process() {
     ArrayList<EnergyFootprint> footprints = new ArrayList<>();
     EnergyAccountant accountant = null;
-    for (Instant timestamp : data.keySet()) {
-      if (accountant == null) {
-        accountant = data.get(timestamp);
-      } else {
-        accountant.add(data.get(timestamp));
-      }
+    synchronized(data) {
+      for (Instant timestamp : data.keySet()) {
+        if (accountant == null) {
+          accountant = data.get(timestamp);
+        } else {
+          accountant.add(data.get(timestamp));
+        }
 
-      if (accountant.isAccountable() == Accountant.Result.ACCOUNTED) {
-        footprints.addAll(accountant.process());
+        if (accountant.isAccountable() == Accountant.Result.ACCOUNTED) {
+          footprints.addAll(accountant.process());
+        }
       }
-    }
-    data.clear();
-    if (accountant != null && accountant.isAccountable() != Accountant.Result.UNACCOUNTABLE) {
-      footprints.addAll(accountant.process());
-    } else if (accountant != null) {
-      data.put(Instant.EPOCH, accountant);
+      data.clear();
+      if (accountant != null && accountant.isAccountable() != Accountant.Result.UNACCOUNTABLE) {
+        footprints.addAll(accountant.process());
+      } else if (accountant != null) {
+        data.put(Instant.EPOCH, accountant);
+      }
     }
     return footprints;
   }

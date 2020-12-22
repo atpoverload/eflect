@@ -33,6 +33,16 @@ public final class EnergyFootprint {
     this.stackTrace = stackTrace;
   }
 
+  @Override
+  public String toString() {
+    return String.join(System.lineSeparator(),
+      name + "(" + id + ")",
+      "start: " + start,
+      "end: " + end,
+      "domain: " + domain,
+      "energy: " + energy);
+  }
+
   public static final class Builder {
     private long id = -1;
     private String name = "";

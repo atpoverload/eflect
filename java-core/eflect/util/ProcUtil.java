@@ -1,5 +1,6 @@
 package eflect.util;
 
+import java.util.Arrays;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import java.io.BufferedReader;
@@ -21,7 +22,7 @@ public class ProcUtil {
   public static ArrayList<String> readTaskStats() {
     ArrayList<String> stats = new ArrayList<String>();
     File tasks = new File(String.join(File.separator, "/proc", Integer.toString(pid), "task"));
-    for (String task : tasks.list()) {
+    for (File task : tasks.listFiles()) {
       File stat = new File(task, "stat");
       if (!stat.canRead()) {
         continue;

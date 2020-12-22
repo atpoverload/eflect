@@ -36,7 +36,7 @@ public final class ProcTaskSample implements Sample {
       if (stats.length < STAT_LENGTH) {
         continue;
       }
-      int offset = STAT_LENGTH - stats.length;
+      int offset = stats.length - STAT_LENGTH;
 
       String name = String.join(" ", Arrays.copyOfRange(stats, 1, 2 + offset));
       name = name.substring(1, name.length() - 1);
