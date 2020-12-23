@@ -36,7 +36,7 @@ public final class TimeUtil {
 
   public static Instant max(Instant first, Instant... others) {
     Instant minTimestamp = first;
-    for (Instant other: others) {
+    for (Instant other : others) {
       minTimestamp = max(minTimestamp, other);
     }
     return minTimestamp;
@@ -52,7 +52,7 @@ public final class TimeUtil {
 
   public static Instant min(Instant first, Instant... others) {
     Instant minTimestamp = first;
-    for (Instant other: others) {
+    for (Instant other : others) {
       minTimestamp = min(minTimestamp, other);
     }
     return minTimestamp;

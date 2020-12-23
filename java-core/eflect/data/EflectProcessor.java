@@ -28,7 +28,7 @@ public abstract class EflectProcessor implements Processor<Sample, Collection<En
   public final Collection<EnergyFootprint> process() {
     ArrayList<EnergyFootprint> footprints = new ArrayList<>();
     EnergyAccountant accountant = null;
-    synchronized(data) {
+    synchronized (data) {
       for (Instant timestamp : data.keySet()) {
         if (accountant == null) {
           accountant = data.get(timestamp);

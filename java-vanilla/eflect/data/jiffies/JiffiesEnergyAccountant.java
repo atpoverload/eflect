@@ -14,8 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 
-import java.util.Arrays;
-
 /**
  * Processor that merges jiffies and energy samples into a single footprint.
  *

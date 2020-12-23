@@ -35,12 +35,14 @@ public final class EnergyFootprint {
 
   @Override
   public String toString() {
-    return String.join(System.lineSeparator(),
-      name + "(" + id + ")",
-      "start: " + start,
-      "end: " + end,
-      "domain: " + domain,
-      "energy: " + energy) + System.lineSeparator();
+    return String.join(
+            System.lineSeparator(),
+            name + "(" + id + ")",
+            "start: " + start,
+            "end: " + end,
+            "domain: " + domain,
+            "energy: " + energy)
+        + System.lineSeparator();
   }
 
   public static final class Builder {
