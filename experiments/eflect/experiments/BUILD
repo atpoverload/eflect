@@ -10,7 +10,8 @@ java_binary(
   deps = [
     "//java-core/eflect/data",
     "//java-core/eflect/data/rapl",
-    "//java-vanilla/eflect",
+    "//java-core/eflect/testing/data",
+    "//java-vanilla/eflect:dummy",
     "//java-vanilla/eflect/data",
     "//java-vanilla/eflect/data/jiffies",
     "@dacapo",

@@ -2,6 +2,8 @@ package eflect;
 
 import static eflect.util.ProcUtil.readProcStat;
 import static eflect.util.ProcUtil.readTaskStats;
+import static jrapl.Rapl.SOCKET_COUNT;
+import static jrapl.Rapl.WRAP_AROUND_VALUE;
 import static jrapl.Rapl.getEnergyStats;
 
 import clerk.Clerk;
@@ -18,7 +20,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 
-/** A profiler that estimates the energy consumed by the current application. */
+/**
+ * A profiler that estimates the energy consumed by the current application using jiffies and rapl.
+ */
 public final class Eflect {
   public static Clerk<Collection<EnergyFootprint>> newEflectClerk(Duration period) {
     Supplier<?> procStat = () -> new ProcStatSample(Instant.now(), readProcStat());
@@ -26,7 +30,8 @@ public final class Eflect {
     Supplier<?> rapl = () -> new RaplSample(Instant.now(), getEnergyStats());
     return new FixedPeriodClerk(
         List.of(procStat, procTask, rapl),
-        new VanillaEflectProcessor(JiffiesEnergyAccountant::new),
+        new VanillaEflectProcessor(
+            () -> new JiffiesEnergyAccountant(SOCKET_COUNT, WRAP_AROUND_VALUE)),
         period);
   }
 

@@ -1,8 +1,5 @@
 package eflect.data.jiffies;
 
-import static jrapl.Rapl.SOCKET_COUNT;
-import static jrapl.Rapl.WRAP_AROUND_ENERGY;
-
 import eflect.data.Accountant;
 import eflect.data.EnergyAccountant;
 import eflect.data.EnergyFootprint;
@@ -23,29 +20,39 @@ import java.util.HashMap;
 public final class JiffiesEnergyAccountant implements EnergyAccountant {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
-  private final long[] domainMin = new long[SOCKET_COUNT];
-  private final long[] domainMax = new long[SOCKET_COUNT];
+  private final int domainCount;
+  private final double wrapAroundEnergy;
+  private final long[] domainMin;
+  private final long[] domainMax;
   private final HashMap<Long, TaskStat> taskStatsMin = new HashMap<>();
   private final HashMap<Long, TaskStat> taskStatsMax = new HashMap<>();
-  private final double[] energyMin = new double[SOCKET_COUNT];
-  private final double[] energyMax = new double[SOCKET_COUNT];
+  private final double[] energyMin;
+  private final double[] energyMax;
 
   private Instant start = Instant.MAX;
   private Instant end = Instant.MIN;
   private ArrayList<EnergyFootprint> data;
 
-  public JiffiesEnergyAccountant() {}
+  public JiffiesEnergyAccountant(int domainCount, double wrapAroundEnergy) {
+    this.domainCount = domainCount;
+    this.wrapAroundEnergy = wrapAroundEnergy;
+
+    domainMin = new long[domainCount];
+    domainMax = new long[domainCount];
+    energyMin = new double[domainCount];
+    energyMax = new double[domainCount];
+  }
 
   /** Puts the sample data into the correct container and adjust the values. */
   public void add(Sample s) {
     if (s instanceof ProcStatSample) {
       long[] jiffies = ((ProcStatSample) s).getJiffies();
-      long[] domainJiffies = new long[SOCKET_COUNT];
+      long[] domainJiffies = new long[domainCount];
       for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-        int domain = cpu / (CPU_COUNT / SOCKET_COUNT);
+        int domain = cpu / (CPU_COUNT / domainCount);
         domainJiffies[domain] += jiffies[cpu];
       }
-      for (int domain = 0; domain < SOCKET_COUNT; domain++) {
+      for (int domain = 0; domain < domainCount; domain++) {
         if (domainJiffies[domain] < domainMin[domain] || domainMin[domain] == 0) {
           domainMin[domain] = domainJiffies[domain];
         }
@@ -66,7 +73,7 @@ public final class JiffiesEnergyAccountant implements EnergyAccountant {
       }
     } else if (s instanceof EnergySample) {
       double[][] energyStats = ((EnergySample) s).getEnergy();
-      for (int domain = 0; domain < SOCKET_COUNT; domain++) {
+      for (int domain = 0; domain < domainCount; domain++) {
         double energy = 0;
         for (double e : energyStats[domain]) {
           energy += e;
@@ -96,10 +103,10 @@ public final class JiffiesEnergyAccountant implements EnergyAccountant {
       JiffiesEnergyAccountant otherAccountant = ((JiffiesEnergyAccountant) other);
       start = TimeUtil.min(start, otherAccountant.start);
       end = TimeUtil.max(end, otherAccountant.end);
-      for (int domain = 0; domain < SOCKET_COUNT; domain++) {
-        domainMin[domain] = Math.min(domainMin[domain], otherAccountant.domainMin[domain]);
+      for (int domain = 0; domain < domainCount; domain++) {
+        domainMin[domain] = minUnderZero(domainMin[domain], otherAccountant.domainMin[domain]);
         domainMax[domain] = Math.max(domainMax[domain], otherAccountant.domainMax[domain]);
-        energyMin[domain] = Math.min(energyMin[domain], otherAccountant.energyMin[domain]);
+        energyMin[domain] = minUnderZero(energyMin[domain], otherAccountant.energyMin[domain]);
         energyMax[domain] = Math.max(energyMax[domain], otherAccountant.energyMax[domain]);
       }
 
@@ -135,9 +142,9 @@ public final class JiffiesEnergyAccountant implements EnergyAccountant {
     }
 
     // check the energy and cpu jiffies
-    double[] energy = new double[SOCKET_COUNT];
-    long[] domainJiffies = new long[SOCKET_COUNT];
-    for (int domain = 0; domain < SOCKET_COUNT; domain++) {
+    double[] energy = new double[domainCount];
+    long[] domainJiffies = new long[domainCount];
+    for (int domain = 0; domain < domainCount; domain++) {
       domainJiffies[domain] = domainMax[domain] - domainMin[domain];
       if (domainJiffies[domain] == 0) {
         return Accountant.Result.UNACCOUNTABLE;
@@ -146,46 +153,47 @@ public final class JiffiesEnergyAccountant implements EnergyAccountant {
       if (energy[domain] == 0) {
         return Accountant.Result.UNACCOUNTABLE;
       } else if (energy[domain] < 0) {
-        energy[domain] += WRAP_AROUND_ENERGY;
+        energy[domain] += wrapAroundEnergy;
       }
     }
 
     // check the task jiffies
-    long[] applicationJiffies = new long[SOCKET_COUNT];
+    long[] applicationJiffies = new long[domainCount];
     ArrayList<TaskStat> tasks = new ArrayList<>();
     for (long id : taskStatsMin.keySet()) {
       TaskStat task = taskStatsMin.get(id);
       long jiffies = taskStatsMax.get(id).jiffies - task.jiffies;
-      int domain = task.cpu / (CPU_COUNT / SOCKET_COUNT);
+      int domain = task.cpu / (CPU_COUNT / domainCount);
       applicationJiffies[domain] += jiffies;
       tasks.add(new TaskStat(task.id, task.name, domain, jiffies));
     }
 
-    for (int domain = 0; domain < SOCKET_COUNT; domain++) {
+    for (int domain = 0; domain < domainCount; domain++) {
       if (applicationJiffies[domain] == 0) {
         return Accountant.Result.UNACCOUNTABLE;
       }
     }
 
     // if we got here, we can produce **something**
-    Accountant.Result result = Accountant.Result.ACCOUNTED;
-    for (int domain = 0; domain < SOCKET_COUNT; domain++) {
+    // Accountant.Result result = Accountant.Result.ACCOUNTED;
+    for (int domain = 0; domain < domainCount; domain++) {
       // check if the application jiffies exceeds the system jiffies; if it does, we use
       // total app jiffies instead of system reported
       // TODO(timur): reason about other policies
       if (applicationJiffies[domain] > domainJiffies[domain]) {
-        result = Accountant.Result.OVERACCOUNTED;
+        // data = accountTasks(energy, applicationJiffies, tasks);
+        // return Accountant.Result.OVERACCOUNTED;
       }
     }
     data = accountTasks(energy, domainJiffies, tasks);
-    return result;
+    return Accountant.Result.ACCOUNTED;
   }
 
   /** Compute an {@link EnergyFootprint} from the stored data. */
   public Collection<EnergyFootprint> process() {
-    if (data != null) {
+    if (data != null || isAccountable() == Accountant.Result.ACCOUNTED) {
       start = end;
-      for (int domain = 0; domain < SOCKET_COUNT; domain++) {
+      for (int domain = 0; domain < domainCount; domain++) {
         domainMin[domain] = domainMax[domain];
         energyMin[domain] = energyMax[domain];
       }
@@ -210,11 +218,26 @@ public final class JiffiesEnergyAccountant implements EnergyAccountant {
                 .setName(task.name)
                 .setStart(start)
                 .setEnd(end)
-                .setDomain(task.cpu)
                 .setEnergy(energy)
                 .build());
       }
     }
     return footprints;
+  }
+
+  private long minUnderZero(long first, long second) {
+    if (first < second || first != 0) {
+      return first;
+    } else {
+      return second;
+    }
+  }
+
+  private double minUnderZero(double first, double second) {
+    if (first < second || first != 0) {
+      return first;
+    } else {
+      return second;
+    }
   }
 }
