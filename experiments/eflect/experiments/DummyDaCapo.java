@@ -2,7 +2,7 @@ package eflect.experiments;
 
 import clerk.Clerk;
 import clerk.util.ClerkUtil;
-import eflect.Eflect;
+import eflect.DummyEflect;
 import java.time.Duration;
 import java.util.logging.Logger;
 import org.dacapo.harness.Callback;
@@ -15,7 +15,7 @@ public final class DaCapo extends Callback {
 
   public DaCapo(CommandLineArgs args) {
     super(args);
-    clerk = Eflect.newEflectClerk(Duration.ofMillis(41));
+    clerk = DummyEflect.newEflectClerk(Duration.ofMillis(41));
   }
 
   @Override

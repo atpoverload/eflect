@@ -10,8 +10,7 @@ java_binary(
   deps = [
     "//java-core/eflect/data",
     "//java-core/eflect/data/rapl",
-    "//java-core/eflect/testing/data",
-    "//java-vanilla/eflect:dummy",
+    "//java-vanilla/eflect",
     "//java-vanilla/eflect/data",
     "//java-vanilla/eflect/data/jiffies",
     "@dacapo",
@@ -21,6 +20,27 @@ java_binary(
   ],
   resources = [
     "@jRAPL//src/jrapl:libCPUScaler.so",
+  ],
+  jvm_flags = ["-Deflect.output=/home/timur/sandbox/eflect/data"],
+)
+
+java_binary(
+  name = "dummy_dacapo",
+  visibility = ["//visibility:public"],
+  main_class = "Harness",
+  srcs = [
+    "DummyDaCapo.java",
+  ],
+  deps = [
+    "//java-core/eflect/data",
+    "//java-core/eflect/testing/data",
+    "//java-vanilla/eflect:dummy",
+    "//java-vanilla/eflect/data",
+    "//java-vanilla/eflect/data/jiffies",
+    "@dacapo",
+    "@clerk//java/clerk",
+    "@clerk//java/clerk:fixed_period",
+    "@clerk//java/clerk/util",
   ],
   jvm_flags = ["-Deflect.output=/home/timur/sandbox/eflect/data"],
 )

@@ -3,7 +3,7 @@ package eflect;
 import static eflect.util.ProcUtil.readProcStat;
 import static eflect.util.ProcUtil.readTaskStats;
 import static jrapl.Rapl.SOCKET_COUNT;
-import static jrapl.Rapl.WRAP_AROUND_VALUE;
+import static jrapl.Rapl.WRAP_AROUND_ENERGY;
 import static jrapl.Rapl.getEnergyStats;
 
 import clerk.Clerk;
@@ -31,7 +31,7 @@ public final class Eflect {
     return new FixedPeriodClerk(
         List.of(procStat, procTask, rapl),
         new VanillaEflectProcessor(
-            () -> new JiffiesEnergyAccountant(SOCKET_COUNT, WRAP_AROUND_VALUE)),
+            () -> new JiffiesEnergyAccountant(SOCKET_COUNT, WRAP_AROUND_ENERGY)),
         period);
   }
 
