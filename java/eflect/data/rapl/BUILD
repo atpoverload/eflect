@@ -5,6 +5,6 @@ java_library(
   visibility = ["//visibility:public"],
   srcs = glob(["*.java"]),
   deps = [
-    "//java-core/eflect/data",
+    "//java/eflect/data",
   ],
 )

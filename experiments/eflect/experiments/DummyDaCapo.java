@@ -2,6 +2,7 @@ package eflect.experiments;
 
 import clerk.Clerk;
 import eflect.DummyEflect;
+import eflect.util.WriterUtils;
 import java.io.File;
 import java.time.Duration;
 import org.dacapo.harness.Callback;

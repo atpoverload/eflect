@@ -28,7 +28,7 @@ public final class ProcTaskSample implements Sample {
   }
 
   /** Parse and return the stat details from the stat strings. */
-  // TODO(timurbey): let's throw our own failures here
+  // TODO(timurbey): let's throw failures here?
   public Collection<TaskStat> getTaskStats() {
     ArrayList<TaskStat> taskStats = new ArrayList<>();
     for (String s : stats) {

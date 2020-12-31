@@ -1,4 +1,4 @@
-package eflect.experiments;
+package eflect.util;
 
 import java.io.File;
 import java.io.FileWriter;

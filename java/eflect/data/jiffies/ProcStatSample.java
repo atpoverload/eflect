@@ -24,6 +24,7 @@ public final class ProcStatSample implements Sample {
   }
 
   /** Parse and return the jiffies from the stat strings. */
+  // TODO(timurbey): let's throw failures here?
   public long[] getJiffies() {
     long[] jiffies = new long[CPU_COUNT];
     for (String s : stats) {

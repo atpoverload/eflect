@@ -1,10 +1,10 @@
 load("@rules_java//java:defs.bzl", "java_library")
 
 java_library(
-  name = "data",
+  name = "jiffies",
   visibility = ["//visibility:public"],
   srcs = glob(["*.java"]),
   deps = [
-    "//java-core/eflect/data",
-  ]
+    "//java/eflect/data",
+  ],
 )

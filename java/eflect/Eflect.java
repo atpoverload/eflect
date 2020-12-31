@@ -9,8 +9,6 @@ import static jrapl.Rapl.getEnergyStats;
 import clerk.Clerk;
 import clerk.FixedPeriodClerk;
 import eflect.data.EnergyFootprint;
-import eflect.data.VanillaEflectProcessor;
-import eflect.data.jiffies.JiffiesEnergyAccountant;
 import eflect.data.jiffies.ProcStatSample;
 import eflect.data.jiffies.ProcTaskSample;
 import eflect.data.rapl.RaplSample;
@@ -30,12 +28,30 @@ public final class Eflect {
     Supplier<?> rapl = () -> new RaplSample(Instant.now(), getEnergyStats());
     return new FixedPeriodClerk(
         List.of(procStat, procTask, rapl),
-        new VanillaEflectProcessor(
-            () -> new JiffiesEnergyAccountant(SOCKET_COUNT, WRAP_AROUND_ENERGY)),
+        new EnergyAccountantMerger(
+            () ->
+                new EnergyAccountant(
+                    SOCKET_COUNT,
+                    WRAP_AROUND_ENERGY,
+                    new JiffiesAccountant(SOCKET_COUNT, cpu -> cpu / (CPU_COUNT / SOCKET_COUNT)))),
         period);
   }
 
   private Eflect() {}
+
+  public final class EnergyAccountantMerger extends AccountantMerger<EnergyFootprint> {
+    private final Supplier<Accountant<Collection<EnergyFootprint>>> accountantFactory;
+
+    public EnergyAccountantMerger(
+        Supplier<Accountant<Collection<EnergyFootprint>>> accountantFactory) {
+      this.accountantFactory = accountantFactory;
+    }
+
+    @Override
+    public Accountant<Collection<EnergyFootprint>> newAccountant() {
+      return accountantFactory.get();
+    }
+  }
 
   public static void main(String[] args) throws Exception {
     Clerk<?> eflect = newEflectClerk(Duration.ofMillis(16));

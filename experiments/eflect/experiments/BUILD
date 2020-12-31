@@ -8,10 +8,11 @@ java_binary(
     "DaCapo.java",
   ],
   deps = [
-    "//java-vanilla/eflect",
+    "//java/eflect",
+    "//java/eflect/util",
     "@dacapo",
   ],
-  jvm_flags = ["-Deflect.output=/mnt/c/Users/Timur/Documents/projects/eflect"],
+  jvm_flags = ["-Deflect.output=/home/timur/projects/eflect"],
   args = ['-c eflect.experiments.DaCapo']
 )
 
@@ -23,7 +24,8 @@ java_binary(
     "DummyDaCapo.java",
   ],
   deps = [
-    "//java-vanilla/eflect:dummy",
+    "//java/eflect:dummy",
+    "//java/eflect/util",
     "@dacapo",
   ],
   jvm_flags = ["-Deflect.output=/mnt/c/Users/Timur/Documents/projects/eflect"],

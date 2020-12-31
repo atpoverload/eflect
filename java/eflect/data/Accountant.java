@@ -14,7 +14,7 @@ public interface Accountant<O> extends Processor<Sample, O> {
   }
 
   /** Returns true if the output of process() will be meaningful. */
-  Result isAccountable();
+  Result account();
 
   /** Adds the data of this accountant with another. */
   // TODO(timur): this name isn't right
