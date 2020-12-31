@@ -131,6 +131,9 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
 
   private synchronized void addProcStat(long[] jiffies) {
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+      if (jiffies[cpu] < 0) {
+        continue;
+      }
       if (statMin[cpu] < 0 || jiffies[cpu] < statMin[cpu]) {
         statMin[cpu] = jiffies[cpu];
       }
