@@ -31,26 +31,16 @@ public final class DummyEflect {
     Supplier<?> rapl = () -> new DummyEnergySample(Instant.now(), counter.getAndIncrement());
     return new FixedPeriodClerk(
         List.of(procStat, procTask, rapl),
-        new EnergyAccountantMerger(
-            () -> new EnergyAccountant(1, 0, new JiffiesAccountant(1, cpu -> 0))),
+        new AccountantMerger<EnergyFootprint>() {
+          @Override
+          public Accountant<Collection<EnergyFootprint>> newAccountant() {
+            return new EnergyAccountant(1, 0, new JiffiesAccountant(1, cpu -> 0));
+          }
+        },
         period);
   }
 
   private DummyEflect() {}
-
-  private static final class EnergyAccountantMerger extends AccountantMerger<EnergyFootprint> {
-    private final Supplier<Accountant<Collection<EnergyFootprint>>> accountantFactory;
-
-    public EnergyAccountantMerger(
-        Supplier<Accountant<Collection<EnergyFootprint>>> accountantFactory) {
-      this.accountantFactory = accountantFactory;
-    }
-
-    @Override
-    public Accountant<Collection<EnergyFootprint>> newAccountant() {
-      return accountantFactory.get();
-    }
-  }
 
   public static void main(String[] args) throws Exception {
     Clerk<?> eflect = newEflectClerk(Duration.ofMillis(16));

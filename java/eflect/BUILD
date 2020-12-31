@@ -54,3 +54,12 @@ java_library(
     "@jRAPL//src/jrapl:libCPUScaler.so",
   ]
 )
+
+java_binary(
+  name = "driver",
+  visibility = ["//visibility:public"],
+  main_class = "eflect.Eflect",
+  runtime_deps = [
+    ":eflect",
+  ]
+)
