@@ -3,6 +3,7 @@ package eflect.data;
 import eflect.util.TimeUtil;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 /** Processor that merges samples into a footprint with task granularity. */
@@ -27,6 +28,10 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
 
     energyMin = new double[domainCount][1];
     energyMax = new double[domainCount][1];
+    for (int domain = 0; domain < domainCount; domain++) {
+      Arrays.fill(energyMin[domain], -1);
+      Arrays.fill(energyMax[domain], -1);
+    }
   }
 
   /** Put the sample data into the correct container. */
@@ -67,6 +72,7 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
    */
   @Override
   public Accountant.Result account() {
+    // System.out.println("e:0");
     // check the timestamps
     if (TimeUtil.equal(start, end)
         || TimeUtil.equal(start, Instant.MAX)
@@ -74,12 +80,16 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
       return Accountant.Result.UNACCOUNTABLE;
     }
 
+    // System.out.println("e:1");
+
     // check the energy and cpu jiffies
     for (int domain = 0; domain < domainCount; domain++) {
       if (energyMax[domain][0] == energyMin[domain][0]) {
         return Accountant.Result.UNACCOUNTABLE;
       }
     }
+
+    // System.out.println("e:2");
 
     return activityAccountant.account();
   }
@@ -123,7 +133,10 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
       for (double e : energy[domain]) {
         domainEnergy += e;
       }
-      if (domainEnergy < energyMin[domain][0] || energyMin[domain][0] == 0) {
+      if (domainEnergy < 0) {
+        continue;
+      }
+      if (energyMin[domain][0] < 0 || domainEnergy < energyMin[domain][0]) {
         energyMin[domain][0] = domainEnergy;
       }
       if (domainEnergy > energyMax[domain][0]) {
