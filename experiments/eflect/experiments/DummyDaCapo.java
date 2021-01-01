@@ -9,15 +9,15 @@ import org.dacapo.harness.Callback;
 import org.dacapo.harness.CommandLineArgs;
 
 public final class DummyDaCapo extends Callback {
-  private final Clerk<?> clerk;
+  private Clerk<?> clerk;
 
   public DummyDaCapo(CommandLineArgs args) {
     super(args);
-    clerk = DummyEflect.newEflectClerk(Duration.ofMillis(41));
   }
 
   @Override
   public void start(String benchmark) {
+    clerk = DummyEflect.newEflectClerk(Duration.ofMillis(41));
     System.out.println("starting eflect");
     clerk.start();
     super.start(benchmark);

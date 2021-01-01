@@ -4,7 +4,6 @@ import eflect.data.Accountant;
 import eflect.data.Sample;
 import eflect.data.ThreadActivity;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.function.IntUnaryOperator;
@@ -28,8 +27,6 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
 
     statMin = new long[CPU_COUNT];
     statMax = new long[CPU_COUNT];
-    Arrays.fill(statMin, -1);
-    Arrays.fill(statMax, -1);
   }
 
   /** Put the sample data into the correct containers. */
@@ -88,13 +85,15 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
       TaskStat task = taskStatMin.get(id);
       long jiffies = taskStatMax.get(id).jiffies - task.jiffies;
       int domain = domainConversion.applyAsInt(task.cpu);
-      applicationJiffies[domain] += jiffies;
-      tasks.add(
-          new ProcThreadActivityBuilder()
-              .setId(task.id)
-              .setName(task.name)
-              .setDomain(domain)
-              .setTaskJiffies(jiffies));
+      if (jiffies > 0) {
+        applicationJiffies[domain] += jiffies;
+        tasks.add(
+            new ProcThreadActivityBuilder()
+                .setId(task.id)
+                .setName(task.name)
+                .setDomain(domain)
+                .setTaskJiffies(jiffies));
+      }
     }
 
     for (int domain = 0; domain < domainCount; domain++) {
@@ -120,8 +119,8 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
   @Override
   public Collection<ThreadActivity> process() {
     if (data != null || account() == Accountant.Result.ACCOUNTED) {
-      for (int domain = 0; domain < domainCount; domain++) {
-        statMin[domain] = statMax[domain];
+      for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+        statMin[cpu] = statMax[cpu];
       }
       taskStatMin.clear();
       taskStatMin.putAll(taskStatMax);
@@ -131,10 +130,10 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
 
   private synchronized void addProcStat(long[] jiffies) {
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-      if (jiffies[cpu] < 0) {
+      if (jiffies[cpu] == 0) {
         continue;
       }
-      if (statMin[cpu] < 0 || jiffies[cpu] < statMin[cpu]) {
+      if (statMin[cpu] == 0 || jiffies[cpu] < statMin[cpu]) {
         statMin[cpu] = jiffies[cpu];
       }
       if (jiffies[cpu] > statMax[cpu]) {
