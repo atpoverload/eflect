@@ -58,6 +58,7 @@ java_library(
     "@clerk//java/clerk:fixed_period",
   ],
   resources = [
+    "@async_profiler//:async-profiler-lib",
     "@jRAPL//src/jrapl:libCPUScaler.so",
   ]
 )
