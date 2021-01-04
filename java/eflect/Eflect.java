@@ -1,5 +1,6 @@
 package eflect;
 
+import static eflect.util.AsyncProfilerUtil.readAsyncProfiler;
 import static eflect.util.ProcUtil.readProcStat;
 import static eflect.util.ProcUtil.readTaskStats;
 import static jrapl.Rapl.SOCKET_COUNT;
@@ -28,21 +29,27 @@ import java.util.function.Supplier;
 public final class Eflect {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
-  public static Clerk<Collection<EnergyFootprint>> newEflectClerk(Duration period) {
-    Supplier<?> procStat = () -> new ProcStatSample(Instant.now(), readProcStat());
-    Supplier<?> procTask = () -> new ProcTaskSample(Instant.now(), readTaskStats());
+  private static Collection<Supplier<?>> getSources() {
+    Supplier<?> stat = () -> new ProcStatSample(Instant.now(), readProcStat());
+    Supplier<?> task = () -> new ProcTaskSample(Instant.now(), readTaskStats());
     Supplier<?> rapl = () -> new RaplSample(Instant.now(), getEnergyStats());
+    Supplier<?> async = () -> new AsyncProfilerSample(readAsyncProfiler());
+    return List.of(stat, task, rapl, async);
+  }
+
+  public static Clerk<Collection<EnergyFootprint>> newEflectClerk(Duration period) {
     return new FixedPeriodClerk(
-        List.of(procStat, procTask, rapl),
-        new AccountantMerger<EnergyFootprint>() {
-          @Override
-          public Accountant<Collection<EnergyFootprint>> newAccountant() {
-            return new EnergyAccountant(
-                SOCKET_COUNT,
-                WRAP_AROUND_ENERGY,
-                new JiffiesAccountant(SOCKET_COUNT, cpu -> cpu / (CPU_COUNT / SOCKET_COUNT)));
-          }
-        },
+        getSources(),
+        new StackTraceAligner(
+            new AccountantMerger<EnergyFootprint>() {
+              @Override
+              public Accountant<Collection<EnergyFootprint>> newAccountant() {
+                return new EnergyAccountant(
+                    SOCKET_COUNT,
+                    WRAP_AROUND_ENERGY,
+                    new JiffiesAccountant(SOCKET_COUNT, cpu -> cpu / (CPU_COUNT / SOCKET_COUNT)));
+              }
+            }),
         period);
   }
 
