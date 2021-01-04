@@ -13,6 +13,8 @@ import eflect.data.Accountant;
 import eflect.data.AccountantMerger;
 import eflect.data.EnergyAccountant;
 import eflect.data.EnergyFootprint;
+import eflect.data.StackTraceAligner;
+import eflect.data.async.AsyncProfilerSample;
 import eflect.data.jiffies.JiffiesAccountant;
 import eflect.data.jiffies.ProcStatSample;
 import eflect.data.jiffies.ProcTaskSample;
