@@ -1,13 +1,17 @@
-package chappie.util;
+package eflect.data.async;
 
+import eflect.data.SampleCollection;
+import eflect.data.StackTraceSample;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 
-/** Wrapper around the async-profiler that safely sets it up from an internal jar. */
-public final class AsyncProfilerSample implements StackTraceSample {
-  private final String stackTraces;
+/** Sample collection of async-profiler records. */
+public final class AsyncProfilerSample implements SampleCollection<StackTraceSample> {
+  private final String records;
 
-  public AsyncProfilerSample(String stackTraces) {
-    this.stackTraces = stackTraces;
+  public AsyncProfilerSample(String records) {
+    this.records = records;
   }
 
   /** Return a dummy timestamp. */
@@ -18,7 +22,11 @@ public final class AsyncProfilerSample implements StackTraceSample {
 
   /** Parse and return the jiffies from the stat strings. */
   @Override
-  public String[] getStackTraces() {
-    return stackTraces.split(System.lineSeparator());
+  public Collection<StackTraceSample> getSamples() {
+    ArrayList<StackTraceSample> samples = new ArrayList();
+    for (String record : records.split("\n")) {
+      samples.add(new AsyncStackTraceSample(record));
+    }
+    return samples;
   }
 }

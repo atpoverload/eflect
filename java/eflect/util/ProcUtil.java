@@ -18,6 +18,10 @@ public class ProcUtil {
 
   private static final int pid = libcl.instance.getpid();
 
+  public static String[] getTasks() {
+    return new File(String.join(File.separator, "/proc", Integer.toString(pid), "task")).list();
+  }
+
   public static ArrayList<String> readTaskStats() {
     ArrayList<String> stats = new ArrayList<String>();
     File tasks = new File(String.join(File.separator, "/proc", Integer.toString(pid), "task"));

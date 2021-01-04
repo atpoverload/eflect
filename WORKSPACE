@@ -27,6 +27,30 @@ maven_install(
   repositories = ["https://repo1.maven.org/maven2"],
 )
 
+# TODO(timurbey): get the build rule to directly build instead of the genrule
+new_local_repository(
+    name = "async_profiler",
+    path = "./async-profiler",
+    build_file_content = """
+load("@rules_java//java:defs.bzl", "java_import")
+
+genrule(
+  name = "async-profiler-lib",
+  visibility = ["//visibility:public"],
+  cmd = "cp ./async-profiler/build/libasyncProfiler.so $@",
+  outs = ["libasyncProfiler.so"],
+)
+
+java_import(
+    name = "async_profiler",
+    visibility = ["//visibility:public"],
+    jars = [
+      "build/async-profiler.jar"
+    ],
+)
+"""
+)
+
 # injection deps (dagger)
 load("@dagger//:workspace_defs.bzl", "DAGGER_ARTIFACTS", "DAGGER_REPOSITORIES")
 maven_install(
