@@ -19,7 +19,6 @@ java_library(
     "//java/eflect/data/async",
     "//java/eflect/data/jiffies",
     "//java/eflect/testing/data",
-    "//java/eflect/util:proc",
     "@clerk//java/clerk",
     "@clerk//java/clerk:fixed_period",
   ]
@@ -45,6 +44,7 @@ java_library(
     "//java/eflect/data/rapl",
     "//java/eflect/util",
     "//java/eflect/util:async",
+    "//java/eflect/util:proc",
     "@clerk//java/clerk",
     "@clerk//java/clerk:fixed_period",
     "@jRAPL//src/java/jrapl",
