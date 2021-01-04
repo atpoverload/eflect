@@ -42,8 +42,8 @@ public final class DummyEflect {
             records.add(
                 String.join(
                     ",",
-                    id,
                     Long.toString(System.currentTimeMillis()),
+                    id,
                     Integer.toString((int) (Math.random() * 1000000))));
           }
           return new AsyncProfilerSample(String.join(System.lineSeparator(), records));

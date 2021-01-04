@@ -35,6 +35,10 @@ public final class RangeMap<K extends Comparable, V> {
     return data.values();
   }
 
+  public Collection<K> keys() {
+    return data.keySet();
+  }
+
   private K findKey(K k) {
     // TODO(timur): switch to binary search
     ArrayList<K> keys = new ArrayList<>(data.keySet());

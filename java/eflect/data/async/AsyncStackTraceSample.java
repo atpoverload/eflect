@@ -14,13 +14,13 @@ public final class AsyncStackTraceSample implements StackTraceSample {
   /** Return a dummy timestamp. */
   @Override
   public Instant getTimestamp() {
-    return Instant.ofEpochMilli(Long.parseLong(data.split(",")[1]));
+    return Instant.ofEpochMilli(Long.parseLong(data.split(",")[0]));
   }
 
   /** Parse and return the jiffies from the stat strings. */
   @Override
   public long getId() {
-    return Long.parseLong(data.split(",")[0]);
+    return Long.parseLong(data.split(",")[1]);
   }
 
   /** Parse and return the jiffies from the stat strings. */

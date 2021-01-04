@@ -79,6 +79,9 @@ public final class StackTraceAligner implements Processor<Sample, Collection<Ene
         footprints.put(footprint.start, new HashMap<Long, EnergyFootprint.Builder>());
       }
       footprints.get(footprint.start).put(footprint.id, footprint.toBuilder());
+      if (!footprints.containsKey(footprint.end)) {
+        footprints.put(footprint.end, new HashMap<Long, EnergyFootprint.Builder>());
+      }
     }
     return new RangeMap<>(footprints);
   }
