@@ -32,6 +32,7 @@ public final class ProcStatSample implements Sample {
       if (stat.length < 11) {
         continue;
       }
+      // TODO(timur): validate the values?
       int cpu = Integer.parseInt(stat[0].substring(3));
       for (int i : JIFFY_INDICES) {
         jiffies[cpu] += Long.parseLong(stat[i]);

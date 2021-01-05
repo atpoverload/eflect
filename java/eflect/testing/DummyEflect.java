@@ -1,4 +1,4 @@
-package eflect;
+package eflect.testing;
 
 import static eflect.util.ProcUtil.getTasks;
 import static eflect.util.ProcUtil.readProcStat;
@@ -35,6 +35,7 @@ public final class DummyEflect {
         () ->
             new DummyEnergySample(
                 Instant.now(), (double) (System.currentTimeMillis() - start) / 1000);
+    // TODO(timur): it would be cool to create a fake stack trace generator
     Supplier<?> async =
         () -> {
           ArrayList<String> records = new ArrayList<>();
@@ -67,9 +68,9 @@ public final class DummyEflect {
   private DummyEflect() {}
 
   public static void main(String[] args) throws Exception {
-    Clerk<?> eflect = newEflectClerk(Duration.ofMillis(16));
+    Clerk<?> eflect = newEflectClerk(Duration.ofMillis(41));
     eflect.start();
-    Thread.sleep(10000);
+    Thread.sleep(1000);
     eflect.stop();
     System.out.println(eflect.read());
   }

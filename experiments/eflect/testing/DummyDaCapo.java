@@ -1,7 +1,7 @@
 package eflect.experiments;
 
 import clerk.Clerk;
-import eflect.DummyEflect;
+import eflect.testing.DummyEflect;
 import eflect.util.WriterUtils;
 import java.io.File;
 import java.time.Duration;

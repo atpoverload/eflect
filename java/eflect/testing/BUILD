@@ -1,30 +1,34 @@
 load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 
 java_library(
-  name = "eflect",
+  name = "testing",
   visibility = ["//visibility:public"],
-  srcs = ["Eflect.java"],
+  srcs = ["DummyEflect.java"],
   deps = [
     "//java/eflect/data",
     "//java/eflect/data/async",
     "//java/eflect/data/jiffies",
-    "//java/eflect/data/rapl",
-    "//java/eflect/util:async",
+    "//java/eflect/testing/data",
     "//java/eflect/util:proc",
     "@clerk//java/clerk",
     "@clerk//java/clerk:fixed_period",
-    "@jRAPL//src/java/jrapl",
   ],
   exports = [
     "//java/eflect/data",
     "//java/eflect/data/async",
     "//java/eflect/data/jiffies",
-    "//java/eflect/data/rapl",
+    "//java/eflect/testing/data",
+    "//java/eflect/util:proc",
     "@clerk//java/clerk",
     "@clerk//java/clerk:fixed_period",
-  ],
-  resources = [
-    "@async_profiler//:async-profiler-lib",
-    "@jRAPL//src/jrapl:libCPUScaler.so",
+  ]
+)
+
+java_binary(
+  name = "driver",
+  visibility = ["//visibility:private"],
+  main_class = "eflect.testing.DummyEflect",
+  runtime_deps = [
+    ":testing",
   ]
 )

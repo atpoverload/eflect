@@ -114,7 +114,7 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
     return Accountant.Result.ACCOUNTED;
   }
 
-  /** Returns the data if it's accountable. Otherwise, null is returned. */
+  /** Returns the data if it's accountable. Otherwise, an empty list is returned. */
   // TODO(timurbey): i don't like discarding implicitly; maybe the accountant needs `discard()`.
   @Override
   public Collection<ThreadActivity> process() {
@@ -124,8 +124,10 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
       }
       taskStatMin.clear();
       taskStatMin.putAll(taskStatMax);
+      return data;
+    } else {
+      return new ArrayList<>();
     }
-    return data;
   }
 
   private synchronized void addProcStat(long[] jiffies) {

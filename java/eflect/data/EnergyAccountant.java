@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/** Processor that merges samples into a footprint with task granularity. */
+/** Processor that merges samples into task energy footprints. */
 public final class EnergyAccountant implements Accountant<Collection<EnergyFootprint>> {
   private final int domainCount;
   private final double wrapAround;
@@ -24,7 +24,7 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
     this.domainCount = domainCount;
     this.wrapAround = wrapAround;
     this.activityAccountant = activityAccountant;
-
+    // TODO(timur): this may change if we come up with a formal definition for domains+components
     energyMin = new double[domainCount][1];
     energyMax = new double[domainCount][1];
   }
@@ -61,8 +61,6 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
    *
    * <p>Returns Result.UNACCOUNTABLE if a domain has no energy.
    *
-   * <p>Returns Result.UNDERACCOUNTED if any task has 0 energy.
-   *
    * <p>Returns the result of the {@link ActivityAccountant} otherwise.
    */
   @Override
@@ -74,7 +72,7 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
       return Accountant.Result.UNACCOUNTABLE;
     }
 
-    // check the energy and cpu jiffies
+    // check the energy
     for (int domain = 0; domain < domainCount; domain++) {
       if (energyMax[domain][0] == energyMin[domain][0]) {
         return Accountant.Result.UNACCOUNTABLE;
@@ -84,7 +82,7 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
     return activityAccountant.account();
   }
 
-  /** Returns the data if it's accountable. Otherwise, null is returned. */
+  /** Returns the data if it's accountable. Otherwise, return an empty list. */
   @Override
   public Collection<EnergyFootprint> process() {
     if (account() != Accountant.Result.UNACCOUNTABLE) {

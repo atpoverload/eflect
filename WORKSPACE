@@ -3,7 +3,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 # data collection back-end
 git_repository(
     name = "clerk",
-    commit = "f534c94c081f68e4117a36d1f6a54d15f9ab3ccb",
+    commit = "f2387bfd9f6bb56d2623e68db4c9ae4eb263d53c",
     shallow_since = "1606411792 -0700",
     remote = "https://github.com/timurbey/clerk.git",
 )

@@ -1,5 +1,7 @@
 package eflect.data;
 
+/** Class that provides the activity of a thread on an energy domain. */
+// TODO(timur): look into an interface for this
 public final class ThreadActivity {
   public final long id;
   public final String name;

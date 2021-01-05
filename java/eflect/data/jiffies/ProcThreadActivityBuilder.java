@@ -2,6 +2,7 @@ package eflect.data.jiffies;
 
 import eflect.data.ThreadActivity;
 
+/** Builder for {@link ThreadActivity} from /proc/ data. */
 final class ProcThreadActivityBuilder {
   long id;
   String name;
@@ -9,36 +10,36 @@ final class ProcThreadActivityBuilder {
   long taskJiffies;
   long totalJiffies;
 
-  public ProcThreadActivityBuilder setId(long id) {
+  ProcThreadActivityBuilder setId(long id) {
     this.id = id;
     return this;
   }
 
-  public ProcThreadActivityBuilder setName(String name) {
+  ProcThreadActivityBuilder setName(String name) {
     this.name = name;
     return this;
   }
 
-  public ProcThreadActivityBuilder setDomain(int domain) {
+  ProcThreadActivityBuilder setDomain(int domain) {
     this.domain = domain;
     return this;
   }
 
-  public ProcThreadActivityBuilder setTaskJiffies(long taskJiffies) {
+  ProcThreadActivityBuilder setTaskJiffies(long taskJiffies) {
     this.taskJiffies = taskJiffies;
     return this;
   }
 
-  public ProcThreadActivityBuilder setTotalJiffies(long totalJiffies) {
+  ProcThreadActivityBuilder setTotalJiffies(long totalJiffies) {
     this.totalJiffies = totalJiffies;
     return this;
   }
 
-  public double getActivity() {
+  double getActivity() {
     return (double) taskJiffies / totalJiffies;
   }
 
-  public ThreadActivity build() {
+  ThreadActivity build() {
     return new ThreadActivity(id, name, domain, getActivity());
   }
 }

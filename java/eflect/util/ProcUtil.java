@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 
-/** Utility to access data from /proc */
+/** Utility to access data from /proc/ */
 public class ProcUtil {
   // /proc/pid/task
   private static interface libcl extends Library {
