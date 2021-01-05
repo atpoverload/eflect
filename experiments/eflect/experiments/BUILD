@@ -15,3 +15,18 @@ java_binary(
   jvm_flags = ["-Deflect.output=/home/timur/projects/eflect"],
   args = ["-c eflect.experiments.DaCapo"]
 )
+
+java_binary(
+  name = "tensorflow",
+  visibility = ["//visibility:public"],
+  main_class = "eflect.experiments.Tensorflow",
+  srcs = [
+    "Tensorflow.java",
+  ],
+  deps = [
+    "//java/eflect",
+    "//java/eflect/util",
+    "@tensorflow//tensorflow/java",
+  ],
+  jvm_flags = ["-Deflect.output=/mnt/c/Users/Timur/Documents/projects/eflect"],
+)

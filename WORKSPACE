@@ -66,6 +66,12 @@ http_archive(
     urls = ["https://clerk-deps.s3.amazonaws.com/dacapo.zip"],
 )
 
+git_repository(
+    name = "tensorflow",
+    commit = "7958e0cbfa55b779c3682aaaa37f6e7c55f55bc2",
+    remote = "https://github.com/tensorflow/tensorflow.git",
+)
+
 load("@rules_jmh//:deps.bzl", "rules_jmh_deps")
 rules_jmh_deps()
 

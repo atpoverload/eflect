@@ -4,7 +4,6 @@ import static eflect.util.ProcUtil.getTasks;
 import static eflect.util.ProcUtil.readProcStat;
 import static eflect.util.ProcUtil.readTaskStats;
 
-import clerk.Clerk;
 import clerk.FixedPeriodClerk;
 import eflect.data.Accountant;
 import eflect.data.AccountantMerger;
@@ -23,18 +22,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 
-/**
- * A profiler that estimates the energy consumed by the current application using jiffies and rapl.
- */
-public final class DummyEflect {
+/** A clerk that provides fake application energy. */
+public final class DummyEflect extends FixedPeriodClerk<Collection<EnergyFootprint>> {
   private static Collection<Supplier<?>> getSources() {
     long start = System.currentTimeMillis();
     Supplier<?> stat = () -> new ProcStatSample(Instant.now(), readProcStat());
     Supplier<?> task = () -> new ProcTaskSample(Instant.now(), readTaskStats());
     Supplier<?> rapl =
-        () ->
-            new DummyEnergySample(
-                Instant.now(), (double) (System.currentTimeMillis() - start) / 1000);
+        () -> new DummyEnergySample(Instant.now(), System.currentTimeMillis() - start);
     // TODO(timur): it would be cool to create a fake stack trace generator
     Supplier<?> async =
         () -> {
@@ -52,8 +47,8 @@ public final class DummyEflect {
     return List.of(stat, task, rapl, async);
   }
 
-  public static Clerk<Collection<EnergyFootprint>> newEflectClerk(Duration period) {
-    return new FixedPeriodClerk(
+  public DummyEflect(Duration period) {
+    super(
         getSources(),
         new StackTraceAligner(
             new AccountantMerger<EnergyFootprint>() {
@@ -63,15 +58,5 @@ public final class DummyEflect {
               }
             }),
         period);
-  }
-
-  private DummyEflect() {}
-
-  public static void main(String[] args) throws Exception {
-    Clerk<?> eflect = newEflectClerk(Duration.ofMillis(41));
-    eflect.start();
-    Thread.sleep(1000);
-    eflect.stop();
-    System.out.println(eflect.read());
   }
 }

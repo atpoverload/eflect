@@ -7,7 +7,6 @@ import static jrapl.Rapl.SOCKET_COUNT;
 import static jrapl.Rapl.WRAP_AROUND_ENERGY;
 import static jrapl.Rapl.getEnergyStats;
 
-import clerk.Clerk;
 import clerk.FixedPeriodClerk;
 import eflect.data.Accountant;
 import eflect.data.AccountantMerger;
@@ -26,7 +25,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /** A profiler that estimates the energy consumed by the current application. */
-public final class Eflect {
+public final class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint>> {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
   private static Collection<Supplier<?>> getSources() {
@@ -37,8 +36,8 @@ public final class Eflect {
     return List.of(stat, task, rapl, async);
   }
 
-  public static Clerk<Collection<EnergyFootprint>> newEflectClerk(Duration period) {
-    return new FixedPeriodClerk(
+  public Eflect(Duration period) {
+    super(
         getSources(),
         new StackTraceAligner(
             new AccountantMerger<EnergyFootprint>() {
@@ -52,6 +51,4 @@ public final class Eflect {
             }),
         period);
   }
-
-  private Eflect() {}
 }

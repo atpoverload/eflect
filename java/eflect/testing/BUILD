@@ -21,14 +21,17 @@ java_library(
     "//java/eflect/util:proc",
     "@clerk//java/clerk",
     "@clerk//java/clerk:fixed_period",
-  ]
+  ],
 )
 
 java_binary(
   name = "driver",
   visibility = ["//visibility:private"],
-  main_class = "eflect.testing.DummyEflect",
-  runtime_deps = [
+  main_class = "eflect.testing.DummyEflectDriver",
+  srcs = ["DummyEflectDriver.java"],
+  deps = [
     ":testing",
-  ]
+    "//java/eflect/util",
+  ],
+  jvm_flags = ["-Deflect.output=/home/timur/projects/eflect"],
 )

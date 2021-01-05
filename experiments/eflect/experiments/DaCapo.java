@@ -1,6 +1,5 @@
 package eflect.experiments;
 
-import clerk.Clerk;
 import eflect.Eflect;
 import eflect.util.WriterUtils;
 import java.io.File;
@@ -9,7 +8,7 @@ import org.dacapo.harness.Callback;
 import org.dacapo.harness.CommandLineArgs;
 
 public final class DaCapo extends Callback {
-  private Clerk<?> clerk;
+  private Eflect eflect;
 
   public DaCapo(CommandLineArgs args) {
     super(args);
@@ -17,20 +16,21 @@ public final class DaCapo extends Callback {
 
   @Override
   public void start(String benchmark) {
-    clerk = Eflect.newEflectClerk(Duration.ofMillis(41));
+    eflect = new Eflect(Duration.ofMillis(41));
     System.out.println("starting eflect");
-    clerk.start();
+    eflect.start();
     super.start(benchmark);
   }
 
   @Override
   public void stop(long duration) {
     super.stop(duration);
-    clerk.stop();
+    eflect.stop();
     System.out.println("stopped eflect");
     WriterUtils.writeCsv(
         new File(System.getProperty("eflect.output", "."), "eflect-footprints.csv").getPath(),
         "id,name,start,end,energy,trace",
-        (Iterable<?>) clerk.read());
+        eflect.read());
+    eflect.terminate();
   }
 }

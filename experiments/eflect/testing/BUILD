@@ -1,7 +1,7 @@
 load("@rules_java//java:defs.bzl", "java_binary")
 
 java_binary(
-  name = "testing",
+  name = "dacapo",
   visibility = ["//visibility:public"],
   main_class = "Harness",
   srcs = [
