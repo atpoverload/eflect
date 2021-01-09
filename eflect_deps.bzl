@@ -1,23 +1,25 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@rules_jvm_external//:defs.bzl", "maven_install")
 
-def clerk_deps():
-    """Loads dagger to compile the injection framework."""
-
-    if not native.existing_rule("rules_jvm_external"):
-      RULES_JVM_EXTERNAL_TAG = "3.3"
-      RULES_JVM_EXTERNAL_SHA = "d85951a92c0908c80bd8551002d66cb23c3434409c814179c0ff026b53544dab"
-      http_archive(
-          name = "rules_jvm_external",
-          strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
-          sha256 = RULES_JVM_EXTERNAL_SHA,
-          url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+def eflect_data_deps():
+    """Loads the dependencies for eflect's data sources."""
+    if not native.existing_rule("jRAPL"):
+      git_repository(
+          name = "jRAPL",
+          commit = "6c3c08f796bf21ed4668d0cb690ce1732d634181",
+          shallow_since = "1603245714 -0400",
+          remote = "https://github.com/timurbey/jRAPL.git",
       )
-
-    if not native.existing_rule("rules_jmh"):
-      http_archive(
-        name = "rules_jmh",
-        strip_prefix = "buchgr-rules_jmh-6ccf8d7",
-        url = "https://github.com/buchgr/rules_jmh/zipball/6ccf8d7b270083982e5c143935704b9f3f18b256",
-        type = "zip",
-        sha256 = "dbb7d7e5ec6e932eddd41b910691231ffd7b428dff1ef9a24e4a9a59c1a1762d",
+    if not native.existing_rule("net_java_dev_jna_jna"):
+      maven_install(
+          name = "net_java_dev_jna_jna",
+          artifacts = ["net.java.dev.jna:jna:5.4.0"],
+          repositories = ["https://repo1.maven.org/maven2"],
       )
+    # we need to get this working; pull down a fat jar?
+    # if not native.existing_rule("async_profiler"):
+    #     git_repository(
+    #         name = "async_profiler",
+    #         remote = "https://github.com/timurbey/async-profiler.git",
+    #     )

@@ -21,7 +21,7 @@ public final class StackTraceAligner implements Processor<Sample, Collection<Ene
   @Override
   public void add(Sample s) {
     if (s instanceof SampleCollection) {
-      Collection<Sample> samples = ((Collection<Sample>) ((SampleCollection) s).getSamples());
+      Collection<Sample> samples = ((SampleCollection) s).getSamples();
       for (Sample sample : samples) {
         add(sample);
       }

@@ -9,12 +9,12 @@ import eflect.data.Accountant;
 import eflect.data.AccountantMerger;
 import eflect.data.EnergyAccountant;
 import eflect.data.EnergyFootprint;
+import eflect.data.EnergySample;
 import eflect.data.StackTraceAligner;
 import eflect.data.async.AsyncProfilerSample;
 import eflect.data.jiffies.JiffiesAccountant;
 import eflect.data.jiffies.ProcStatSample;
 import eflect.data.jiffies.ProcTaskSample;
-import eflect.testing.data.DummyEnergySample;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -29,7 +29,8 @@ public final class DummyEflect extends FixedPeriodClerk<Collection<EnergyFootpri
     Supplier<?> stat = () -> new ProcStatSample(Instant.now(), readProcStat());
     Supplier<?> task = () -> new ProcTaskSample(Instant.now(), readTaskStats());
     Supplier<?> rapl =
-        () -> new DummyEnergySample(Instant.now(), System.currentTimeMillis() - start);
+        () ->
+            new EnergySample(Instant.now(), new double[][] {{System.currentTimeMillis() - start}});
     // TODO(timur): it would be cool to create a fake stack trace generator
     Supplier<?> async =
         () -> {

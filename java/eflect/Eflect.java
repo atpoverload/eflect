@@ -17,7 +17,7 @@ import eflect.data.async.AsyncProfilerSample;
 import eflect.data.jiffies.JiffiesAccountant;
 import eflect.data.jiffies.ProcStatSample;
 import eflect.data.jiffies.ProcTaskSample;
-import eflect.data.rapl.RaplSample;
+import eflect.data.rapl.EnergySample;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -31,7 +31,7 @@ public final class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint>> 
   private static Collection<Supplier<?>> getSources() {
     Supplier<?> stat = () -> new ProcStatSample(Instant.now(), readProcStat());
     Supplier<?> task = () -> new ProcTaskSample(Instant.now(), readTaskStats());
-    Supplier<?> rapl = () -> new RaplSample(Instant.now(), getEnergyStats());
+    Supplier<?> rapl = () -> new EnergySample(Instant.now(), getEnergyStats());
     Supplier<?> async = () -> new AsyncProfilerSample(readAsyncProfiler());
     return List.of(stat, task, rapl, async);
   }

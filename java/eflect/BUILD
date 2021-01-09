@@ -8,7 +8,6 @@ java_library(
     "//java/eflect/data",
     "//java/eflect/data/async",
     "//java/eflect/data/jiffies",
-    "//java/eflect/data/rapl",
     "//java/eflect/util:async",
     "//java/eflect/util:proc",
     "@clerk//java/clerk",
@@ -19,7 +18,6 @@ java_library(
     "//java/eflect/data",
     "//java/eflect/data/async",
     "//java/eflect/data/jiffies",
-    "//java/eflect/data/rapl",
     "@clerk//java/clerk",
     "@clerk//java/clerk:fixed_period",
   ],
@@ -27,4 +25,29 @@ java_library(
     "@async_profiler//:async-profiler-lib",
     "@jRAPL//src/jrapl:libCPUScaler.so",
   ]
+)
+
+java_library(
+  name = "freq",
+  visibility = ["//visibility:public"],
+  srcs = ["CpuFreqMonitor.java"],
+  deps = [
+    "//java/eflect/data",
+    "@clerk//java/clerk",
+    "@clerk//java/clerk:fixed_period",
+  ],
+  exports = [
+    "//java/eflect/data",
+    "@clerk//java/clerk",
+    "@clerk//java/clerk:fixed_period",
+  ],
+)
+
+java_binary(
+  name = "freq_test",
+  visibility = ["//visibility:public"],
+  main_class = "eflect.CpuFreqMonitor",
+  runtime_deps = [
+    ":freq",
+  ],
 )

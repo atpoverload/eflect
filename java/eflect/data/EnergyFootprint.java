@@ -33,7 +33,7 @@ public final class EnergyFootprint {
           start.toString(),
           end.toString(),
           Double.toString(energy),
-          stackTrace);
+          "");
     }
     String[] traces = stackTrace.split("@");
     String[] footprints = new String[traces.length];

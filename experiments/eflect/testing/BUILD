@@ -8,8 +8,8 @@ java_binary(
     "DummyDaCapo.java",
   ],
   deps = [
-    "//java/eflect/testing",
-    "//java/eflect/util",
+    "@eflect//java/eflect/testing",
+    "@eflect//java/eflect/util",
     "@dacapo",
   ],
   jvm_flags = ["-Deflect.output=/mnt/c/Users/Timur/Documents/projects/eflect"],

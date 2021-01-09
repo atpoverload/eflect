@@ -8,14 +8,24 @@ import org.dacapo.harness.Callback;
 import org.dacapo.harness.CommandLineArgs;
 
 public final class DaCapo extends Callback {
+  private final String outputPath;
+
   private Eflect eflect;
+  private String benchmark;
+  private int iteration = 0;
 
   public DaCapo(CommandLineArgs args) {
     super(args);
+    outputPath = System.getProperty("eflect.output", ".");
+    File output = new File(outputPath);
+    if (!output.exists()) {
+      output.mkdir();
+    }
   }
 
   @Override
   public void start(String benchmark) {
+    this.benchmark = benchmark;
     eflect = new Eflect(Duration.ofMillis(41));
     System.out.println("starting eflect");
     eflect.start();
@@ -27,10 +37,16 @@ public final class DaCapo extends Callback {
     super.stop(duration);
     eflect.stop();
     System.out.println("stopped eflect");
+
+    File dataDirectory = new File(outputPath, benchmark);
+    if (!dataDirectory.exists()) {
+      dataDirectory.mkdir();
+    }
     WriterUtils.writeCsv(
-        new File(System.getProperty("eflect.output", "."), "eflect-footprints.csv").getPath(),
-        "id,name,start,end,energy,trace",
-        eflect.read());
+        dataDirectory.getPath(),
+        "eflect-footprint-" + iteration++ + ".csv",
+        "id,name,start,end,energy,trace", // header
+        eflect.read()); // data
     eflect.terminate();
   }
 }

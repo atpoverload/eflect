@@ -6,9 +6,9 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * A wrapper around a map that places keys in a range.
+ * A wrapper around a map that allows searching of keys in a range.
  *
- * <p>A key k's bucket is such that bucket.value <= k < (bucket + 1).value.
+ * <p>A key k's bucket is such that bucket_i.value <= k < bucket_i+1.value.
  */
 public final class RangeMap<K extends Comparable, V> {
   private final Map<K, V> data;
