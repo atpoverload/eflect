@@ -6,6 +6,7 @@ import clerk.FixedPeriodClerk;
 import clerk.Processor;
 import eflect.data.Sample;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.time.Duration;
 import java.time.Instant;
@@ -15,19 +16,20 @@ import java.util.ArrayList;
 public final class CpuFreqMonitor extends FixedPeriodClerk<String> {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
   private static final String FREQS_DIR_PATH =
-      String.join(System.lineSeparator(), "sys", "devices", "system", "cpu", "cpu");
+      String.join(File.separator, "/sys", "devices", "system", "cpu");
   private static final String FREQS_DATA_PATH =
-      String.join(System.lineSeparator(), "cpufreq", "cpuinfo_cur_freq");
+      String.join(File.separator, "cpufreq", "cpuinfo_cur_freq");
 
   private static String[] readCpuFreqs() {
     String[] freqs = new String[CPU_COUNT];
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
       String freqPath =
           String.join(
-              System.lineSeparator(), FREQS_DIR_PATH, Integer.toString(cpu), FREQS_DATA_PATH);
+              File.separator, FREQS_DIR_PATH, "cpu" + Integer.toString(cpu), FREQS_DATA_PATH);
       try (BufferedReader reader = new BufferedReader(new FileReader(freqPath))) {
         freqs[cpu] = reader.readLine();
       } catch (Exception e) {
+        e.printStackTrace();
         freqs[cpu] = "-1";
       }
     }
@@ -73,13 +75,5 @@ public final class CpuFreqMonitor extends FixedPeriodClerk<String> {
       String freqString = String.join(",", freqs);
       return String.join(",", timestamp.toString(), freqString);
     }
-  }
-
-  public static void main(String[] args) throws Exception {
-    CpuFreqMonitor clerk = new CpuFreqMonitor(Duration.ofMillis(512));
-    clerk.start();
-    Thread.sleep(10000);
-    clerk.stop();
-    System.out.println(clerk.read());
   }
 }

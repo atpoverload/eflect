@@ -42,12 +42,3 @@ java_library(
     "@clerk//java/clerk:fixed_period",
   ],
 )
-
-java_binary(
-  name = "freq_test",
-  visibility = ["//visibility:public"],
-  main_class = "eflect.CpuFreqMonitor",
-  runtime_deps = [
-    ":freq",
-  ],
-)
