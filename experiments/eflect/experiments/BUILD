@@ -10,6 +10,7 @@ java_binary(
   ],
   deps = [
     "@eflect//java/eflect",
+    "@eflect//java/eflect:freq",
     "@eflect//java/eflect/util",
     "@dacapo",
   ],

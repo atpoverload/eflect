@@ -17,9 +17,8 @@ def eflect_data_deps():
           artifacts = ["net.java.dev.jna:jna:5.4.0"],
           repositories = ["https://repo1.maven.org/maven2"],
       )
-    # we need to get this working; pull down a fat jar?
-    # if not native.existing_rule("async_profiler"):
-    #     git_repository(
-    #         name = "async_profiler",
-    #         remote = "https://github.com/timurbey/async-profiler.git",
-    #     )
+    if not native.existing_rule("async-profiler"):
+      http_archive(
+          name = "async-profiler",
+          urls = ["https://clerk-deps.s3.amazonaws.com/async-profiler.zip"],
+      )

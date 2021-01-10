@@ -1,9 +1,11 @@
 package eflect.experiments;
 
+import eflect.CpuFreqMonitor;
 import eflect.Eflect;
 import eflect.util.WriterUtils;
 import java.io.File;
 import java.time.Duration;
+import java.util.List;
 import org.dacapo.harness.Callback;
 import org.dacapo.harness.CommandLineArgs;
 
@@ -63,7 +65,7 @@ public final class DaCapo extends Callback {
         dataDirectory.getPath(),
         "freq-" + iteration++ + ".csv",
         String.join(",", "timestamp", String.join(",", cpus)), // header
-        freqMonitor.read()); // data
+        List.of(freqMonitor.read())); // data
     freqMonitor.terminate();
   }
 }

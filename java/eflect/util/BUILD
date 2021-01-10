@@ -14,7 +14,7 @@ java_library(
   visibility = ["//visibility:public"],
   srcs = ["AsyncProfilerUtil.java"],
   deps = [
-    "@async_profiler",
+    "@async-profiler",
   ],
 )
 

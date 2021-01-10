@@ -1,5 +1,21 @@
 load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 
+genrule(
+  name = "async-profiler-lib",
+  visibility = ["//visibility:public"],
+  srcs = ["@async-profiler"],
+  outs = ["libasyncProfiler.so"],
+  cmd = "cp -f $< $@",
+)
+
+genrule(
+  name = "cpu-scaler-lib",
+  visibility = ["//visibility:public"],
+  srcs = ["@jRAPL//src/jrapl:libCPUScaler.so"],
+  outs = ["libCPUScaler.so"],
+  cmd = "cp -f $< $@",
+)
+
 java_library(
   name = "eflect",
   visibility = ["//visibility:public"],
@@ -22,8 +38,8 @@ java_library(
     "@clerk//java/clerk:fixed_period",
   ],
   resources = [
-    "@async_profiler//:async-profiler-lib",
-    "@jRAPL//src/jrapl:libCPUScaler.so",
+    ":async-profiler-lib",
+    ":cpu-scaler-lib",
   ]
 )
 
