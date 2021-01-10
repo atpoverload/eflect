@@ -5,6 +5,7 @@ import static eflect.util.ProcUtil.readProcStat;
 import static eflect.util.ProcUtil.readTaskStats;
 import static jrapl.Rapl.SOCKET_COUNT;
 import static jrapl.Rapl.WRAP_AROUND_ENERGY;
+import static jrapl.Rapl.loadRapl;
 import static jrapl.Rapl.getEnergyStats;
 
 import clerk.FixedPeriodClerk;
@@ -29,6 +30,7 @@ public final class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint>> 
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
   private static Collection<Supplier<?>> getSources() {
+    loadRapl("/external/eflect/java/eflect/");
     Supplier<?> stat = () -> new ProcStatSample(Instant.now(), readProcStat());
     Supplier<?> task = () -> new ProcTaskSample(Instant.now(), readTaskStats());
     Supplier<?> rapl = () -> new EnergySample(Instant.now(), getEnergyStats());

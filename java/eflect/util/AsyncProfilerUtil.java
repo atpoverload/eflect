@@ -54,6 +54,7 @@ public final class AsyncProfilerUtil {
     try {
       // only supporting sub-second for the moment
       long rate = asyncRate.getNano();
+      String path = "/external/eflect/java/eflect/libasyncProfiler.so";
       String path =
           createLibraryFileFromJar("/external/async_profiler/libasyncProfiler.so").getPath();
       AsyncProfiler.getInstance(path).start(Events.CPU, asyncRate.getNano());
