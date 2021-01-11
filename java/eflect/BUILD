@@ -3,7 +3,7 @@ load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 genrule(
   name = "async-profiler-lib",
   visibility = ["//visibility:public"],
-  srcs = ["@async-profiler"],
+  srcs = ["@async-profiler//:lib-async-profiler"],
   outs = ["libasyncProfiler.so"],
   cmd = "cp -f $< $@",
 )
@@ -37,7 +37,7 @@ java_library(
     "@clerk//java/clerk",
     "@clerk//java/clerk:fixed_period",
   ],
-  resources = [
+  data = [
     ":async-profiler-lib",
     ":cpu-scaler-lib",
   ]

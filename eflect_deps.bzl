@@ -7,7 +7,7 @@ def eflect_data_deps():
     if not native.existing_rule("jRAPL"):
       git_repository(
           name = "jRAPL",
-          commit = "5652f2a600dd68be01f4cb63d0de5834e0757cd6",
+          commit = "93a1cc95c699355753a184b714e083e9189d0aa9",
           shallow_since = "1603245714 -0400",
           remote = "https://github.com/timurbey/jRAPL.git",
       )
@@ -18,7 +18,24 @@ def eflect_data_deps():
           repositories = ["https://repo1.maven.org/maven2"],
       )
     if not native.existing_rule("async-profiler"):
-      http_archive(
+      native.new_local_repository(
           name = "async-profiler",
-          urls = ["https://clerk-deps.s3.amazonaws.com/async-profiler.zip"],
+          path = "./async-profiler",
+          build_file_content = """
+load("@rules_java//java:defs.bzl", "java_import")
+
+filegroup(
+    name = "lib-async-profiler",
+    srcs = ["build/libasyncProfiler.so"],
+    visibility = ["//visibility:public"],
+)
+
+java_import(
+    name = "async-profiler",
+    visibility = ["//visibility:public"],
+    jars = [
+      "build/async-profiler.jar"
+    ],
+)
+"""
       )

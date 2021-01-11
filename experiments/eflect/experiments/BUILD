@@ -1,5 +1,5 @@
 load("@rules_java//java:defs.bzl", "java_binary")
-load("//:eflect_experiment_defs.bzl", "eflect_benchmark")
+# load("//:eflect_experiment_defs.bzl", "eflect_benchmark")
 
 java_binary(
   name = "dacapo",
@@ -18,9 +18,9 @@ java_binary(
   args = ["-c eflect.experiments.DaCapo"]
 )
 
-eflect_benchmark(
-  name = "benchmark1",
-  srcs = [
-    "JMHBenchmark1.java",
-  ],
-)
+# eflect_benchmark(
+#   name = "benchmark1",
+#   srcs = [
+#     "JMHBenchmark1.java",
+#   ],
+# )

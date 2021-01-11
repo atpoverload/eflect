@@ -15,6 +15,9 @@ clerk_deps()
 load("eflect_deps.bzl", "eflect_data_deps")
 eflect_data_deps()
 
+load("//:eflect_experiment_deps.bzl", "eflect_experiment_deps")
+eflect_experiment_deps()
+
 # injection deps (dagger)
 # load("@dagger//:workspace_defs.bzl", "DAGGER_ARTIFACTS", "DAGGER_REPOSITORIES")
 # maven_install(

@@ -21,3 +21,25 @@ eflect_data_deps()
 
 load("//:eflect_experiment_deps.bzl", "eflect_experiment_deps")
 eflect_experiment_deps()
+
+new_local_repository(
+      name = "async-profiler",
+      path = "./async-profiler",
+      build_file_content = """
+load("@rules_java//java:defs.bzl", "java_import")
+
+filegroup(
+    name = "lib-async-profiler",
+    srcs = ["build/libasyncProfiler.so"],
+    visibility = ["//visibility:public"],
+)
+
+java_import(
+    name = "async-profiler",
+    visibility = ["//visibility:public"],
+    jars = [
+      "build/async-profiler.jar"
+    ],
+)
+"""
+)
