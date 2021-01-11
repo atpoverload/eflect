@@ -7,7 +7,7 @@ def eflect_data_deps():
     if not native.existing_rule("jRAPL"):
       git_repository(
           name = "jRAPL",
-          commit = "93a1cc95c699355753a184b714e083e9189d0aa9",
+          commit = "0f00bcec68fb10a325b3cb3906a6b6ef412e093f",
           shallow_since = "1603245714 -0400",
           remote = "https://github.com/timurbey/jRAPL.git",
       )

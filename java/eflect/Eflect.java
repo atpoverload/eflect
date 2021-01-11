@@ -30,7 +30,7 @@ public final class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint>> 
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
   private static Collection<Supplier<?>> getSources() {
-    loadRapl("/external/eflect/java/eflect/libCPUScaler.so");
+    loadRapl("CPUScaler");
     Supplier<?> stat = () -> new ProcStatSample(Instant.now(), readProcStat());
     Supplier<?> task = () -> new ProcTaskSample(Instant.now(), readTaskStats());
     Supplier<?> rapl = () -> new EnergySample(Instant.now(), getEnergyStats());
