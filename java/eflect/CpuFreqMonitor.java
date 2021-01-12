@@ -12,7 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 
-/** A profiler that estimates the energy consumed by the current application. */
+/** A profiler that outputs timestamped cpu freqs. */
 public final class CpuFreqMonitor extends FixedPeriodClerk<String> {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
   private static final String FREQS_DIR_PATH =
