@@ -10,15 +10,6 @@ java_library(
 )
 
 java_library(
-  name = "async",
-  visibility = ["//visibility:public"],
-  srcs = ["AsyncProfilerUtil.java"],
-  deps = [
-    "@async-profiler",
-  ],
-)
-
-java_library(
   name = "proc",
   visibility = ["//visibility:public"],
   srcs = ["ProcUtil.java"],

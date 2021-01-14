@@ -22,20 +22,32 @@ java_library(
   srcs = ["Eflect.java"],
   deps = [
     "//java/eflect/data",
-    "//java/eflect/data/async",
     "//java/eflect/data/jiffies",
-    "//java/eflect/util:async",
-    "//java/eflect/util:proc",
     "@clerk//java/clerk",
     "@clerk//java/clerk:fixed_period",
-    "@jRAPL//src/java/jrapl",
   ],
   exports = [
     "//java/eflect/data",
-    "//java/eflect/data/async",
     "//java/eflect/data/jiffies",
     "@clerk//java/clerk",
     "@clerk//java/clerk:fixed_period",
+  ]
+)
+
+java_library(
+  name = "linux_eflect",
+  visibility = ["//visibility:public"],
+  srcs = ["LinuxEflect.java"],
+  deps = [
+    ":eflect",
+    "//java/eflect/data/async",
+    "//java/eflect/util:proc",
+    "@async-profiler",
+    "@jRAPL//src/java/jrapl",
+  ],
+  exports = [
+    ":eflect",
+    "//java/eflect/data/async",
   ],
   data = [
     ":async-profiler-lib",

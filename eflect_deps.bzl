@@ -47,6 +47,21 @@ def eflect_experiment_deps():
         name = "dacapo",
         urls = ["https://clerk-deps.s3.amazonaws.com/dacapo.zip"],
     )
+  if not native.existing_rule("org_tensorflow_tensorflow"):
+    maven_install(
+        name = "org_tensorflow_tensorflow",
+        artifacts = [
+          "org.tensorflow:tensorflow:1.15.0",
+        ],
+        repositories = ["https://repo1.maven.org/maven2"],
+    )
+    maven_install(
+        name = "org_tensorflow_libtensorflow",
+        artifacts = [
+          "org.tensorflow:libtensorflow:1.15.0",
+        ],
+        repositories = ["https://repo1.maven.org/maven2"],
+    )
   if not native.existing_rule("org_openjdk_jmh_jmh_core"):
     maven_install(
         name = "org_openjdk_jmh_jmh_core",
