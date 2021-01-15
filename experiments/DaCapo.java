@@ -17,7 +17,6 @@ public final class DaCapo extends Callback {
   @Override
   public void start(String benchmark) {
     this.benchmark = benchmark;
-    System.out.println("starting eflect");
     EflectProfiler.getInstance().start(Duration.ofMillis(41));
     super.start(benchmark);
   }
@@ -26,7 +25,6 @@ public final class DaCapo extends Callback {
   public void stop(long duration) {
     super.stop(duration);
     EflectProfiler.getInstance().stop();
-    System.out.println("stopped eflect");
     EflectProfiler.getInstance().dump(benchmark, iteration);
     iteration++;
   }

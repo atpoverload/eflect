@@ -11,10 +11,10 @@ import java.util.TreeMap;
 /** Processor that aligns stack traces to energy footprints. */
 public final class StackTraceAligner implements Processor<Sample, Collection<EnergyFootprint>> {
   private final TreeMap<Instant, Collection<StackTraceSample>> samples = new TreeMap<>();
-  private final Processor<Sample, Collection<EnergyFootprint>> energyAccountant;
+  private final Processor<Sample, Collection<EnergyFootprint>> energyProcessor;
 
-  public StackTraceAligner(Processor<Sample, Collection<EnergyFootprint>> energyAccountant) {
-    this.energyAccountant = energyAccountant;
+  public StackTraceAligner(Processor<Sample, Collection<EnergyFootprint>> energyProcessor) {
+    this.energyProcessor = energyProcessor;
   }
 
   /** Put the sample data into the correct container. */
@@ -28,7 +28,7 @@ public final class StackTraceAligner implements Processor<Sample, Collection<Ene
     } else if (s instanceof StackTraceSample) {
       addSample((StackTraceSample) s);
     } else {
-      energyAccountant.add(s);
+      energyProcessor.add(s);
     }
   }
 
@@ -56,8 +56,11 @@ public final class StackTraceAligner implements Processor<Sample, Collection<Ene
     }
     ArrayList<EnergyFootprint> footprints = new ArrayList<>();
     for (HashMap<?, EnergyFootprint.Builder> group : footprintGroups.values()) {
-      for (EnergyFootprint.Builder footprint : group.values()) {
-        footprints.add(footprint.build());
+      for (EnergyFootprint.Builder builder : group.values()) {
+        EnergyFootprint footprint = builder.build();
+        if (footprint.energy > 0) {
+          footprints.add(footprint);
+        }
       }
     }
     return footprints;
@@ -74,7 +77,7 @@ public final class StackTraceAligner implements Processor<Sample, Collection<Ene
 
   private RangeMap<Instant, HashMap<Long, EnergyFootprint.Builder>> getFootprints() {
     HashMap<Instant, HashMap<Long, EnergyFootprint.Builder>> footprints = new HashMap<>();
-    for (EnergyFootprint footprint : energyAccountant.process()) {
+    for (EnergyFootprint footprint : energyProcessor.process()) {
       if (!footprints.containsKey(footprint.start)) {
         footprints.put(footprint.start, new HashMap<Long, EnergyFootprint.Builder>());
       }

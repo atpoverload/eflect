@@ -1,7 +1,6 @@
 package eflect;
 
 import clerk.FixedPeriodClerk;
-import eflect.data.Accountant;
 import eflect.data.AccountantMerger;
 import eflect.data.EnergyAccountant;
 import eflect.data.EnergyFootprint;
@@ -23,15 +22,12 @@ public abstract class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint
     super(
         sources,
         new StackTraceAligner(
-            new AccountantMerger<EnergyFootprint>() {
-              @Override
-              public Accountant<Collection<EnergyFootprint>> newAccountant() {
-                return new EnergyAccountant(
-                    domainCount,
-                    wrapAroundEnergy,
-                    new JiffiesAccountant(domainCount, domainConversion));
-              }
-            }),
+            new AccountantMerger<EnergyFootprint>(
+                () ->
+                    new EnergyAccountant(
+                        domainCount,
+                        wrapAroundEnergy,
+                        new JiffiesAccountant(domainCount, domainConversion)))),
         period);
   }
 }

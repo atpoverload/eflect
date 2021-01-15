@@ -3,6 +3,7 @@ package eflect.data;
 import eflect.util.TimeUtil;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 /** Processor that merges samples into task energy footprints. */
@@ -24,9 +25,13 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
     this.domainCount = domainCount;
     this.wrapAround = wrapAround;
     this.activityAccountant = activityAccountant;
-    // TODO(timur): this may change if we come up with a formal definition for domains+components
+    // TODO(timur): this may change if we come up with a formal definition for domains + components
     energyMin = new double[domainCount][1];
     energyMax = new double[domainCount][1];
+    for (int domain = 0; domain < domainCount; domain++) {
+      Arrays.fill(energyMin[domain], -1);
+      Arrays.fill(energyMax[domain], -1);
+    }
   }
 
   /** Put the sample data into the correct container. */
@@ -121,10 +126,7 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
       for (double e : energy[domain]) {
         domainEnergy += e;
       }
-      if (domainEnergy == 0) {
-        continue;
-      }
-      if (energyMin[domain][0] == 0 || domainEnergy < energyMin[domain][0]) {
+      if (energyMin[domain][0] < 0 || domainEnergy < energyMin[domain][0]) {
         energyMin[domain][0] = domainEnergy;
       }
       if (domainEnergy > energyMax[domain][0]) {

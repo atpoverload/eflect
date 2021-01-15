@@ -5,19 +5,23 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 /** Processor that merges accountants into groups of accounted data. */
-public abstract class AccountantMerger<O> implements Processor<Sample, Collection<O>> {
+public final class AccountantMerger<O> implements Processor<Sample, Collection<O>> {
   private final TreeMap<Instant, Accountant<Collection<O>>> data = new TreeMap<>();
+  private final Supplier<Accountant<Collection<O>>> accountantFactory;
 
-  protected abstract Accountant<Collection<O>> newAccountant();
+  public AccountantMerger(Supplier<Accountant<Collection<O>>> accountantFactory) {
+    this.accountantFactory = accountantFactory;
+  }
 
   /** Put the sample into a timestamped bucket. */
   @Override
   public final void add(Sample s) {
     synchronized (data) {
       if (!data.containsKey(s.getTimestamp())) {
-        data.put(s.getTimestamp(), newAccountant());
+        data.put(s.getTimestamp(), accountantFactory.get());
       }
       data.get(s.getTimestamp()).add(s);
     }

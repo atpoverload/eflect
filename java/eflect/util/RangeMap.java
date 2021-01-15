@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * A wrapper around a map that allows searching of keys in a range.
@@ -11,10 +12,12 @@ import java.util.Map;
  * <p>A key k's bucket is such that bucket_i.value <= k < bucket_i+1.value.
  */
 public final class RangeMap<K extends Comparable, V> {
-  private final Map<K, V> data;
+  private final TreeMap<K, V> data = new TreeMap<>();
 
   public RangeMap(Map<K, V> data) {
-    this.data = data;
+    for (K k : data.keySet()) {
+      this.data.put(k, data.get(k));
+    }
   }
 
   /** Checks if a key is in the key range of the data. */
@@ -24,10 +27,14 @@ public final class RangeMap<K extends Comparable, V> {
 
   /** Gets the data in the bucket closest to the key. */
   public V get(K k) {
-    if (!contains(k)) {
+    if (data.isEmpty() || k == null) {
       return null;
     }
-    return data.get(findKey(k));
+    K key = findKey(k);
+    if (key == null) {
+      return null;
+    }
+    return data.get(key);
   }
 
   /** Returns the underlying data. */
@@ -36,12 +43,15 @@ public final class RangeMap<K extends Comparable, V> {
   }
 
   private K findKey(K k) {
-    // TODO(timur): switch to binary search
+    // TODO(timur): switch to binary search; see notes in TODO
     ArrayList<K> keys = new ArrayList<>(data.keySet());
     Collections.sort(keys);
+    if (keys.get(0).compareTo(k) > 0) {
+      return null;
+    }
     for (int i = 0; i < keys.size(); i++) {
       if (keys.get(i).compareTo(k) <= 0
-          && (keys.size() > i + 1 && keys.get(i + 1).compareTo(k) > 0)) {
+          && (i + 1 == keys.size() || keys.get(i + 1).compareTo(k) > 0)) {
         return keys.get(i);
       }
     }

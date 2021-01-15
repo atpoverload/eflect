@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.function.IntUnaryOperator;
+import java.util.Arrays;
 
 /** Processor that merges /proc/ samples into {@link ThreadActivity}s. */
 public final class JiffiesAccountant implements Accountant<Collection<ThreadActivity>> {
@@ -27,6 +28,8 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
 
     statMin = new long[CPU_COUNT];
     statMax = new long[CPU_COUNT];
+    Arrays.fill(statMin, -1);
+    Arrays.fill(statMax, -1);
   }
 
   /** Put the sample data into the correct containers. */
@@ -132,10 +135,7 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
 
   private synchronized void addProcStat(long[] jiffies) {
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-      if (jiffies[cpu] == 0) {
-        continue;
-      }
-      if (statMin[cpu] == 0 || jiffies[cpu] < statMin[cpu]) {
+      if (statMin[cpu] == -1 || jiffies[cpu] < statMin[cpu]) {
         statMin[cpu] = jiffies[cpu];
       }
       if (jiffies[cpu] > statMax[cpu]) {
