@@ -41,7 +41,7 @@ java_library(
   deps = [
     ":eflect",
     "//java/eflect/data/async",
-    "//java/eflect/util:proc",
+    "//java/eflect/util",
     "@async-profiler",
     "@jRAPL//src/java/jrapl",
   ],

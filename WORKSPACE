@@ -5,8 +5,8 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 # data collection back-end
 git_repository(
     name = "clerk",
-    commit = "f2387bfd9f6bb56d2623e68db4c9ae4eb263d53c",
-    shallow_since = "1609783280 -0700",
+    commit = "6f67b0060a19c03902e5243fe3c008935334c331",
+    shallow_since = "1610998074 -0700",
     remote = "https://github.com/timurbey/clerk.git",
 )
 load("@clerk//:clerk_deps.bzl", "clerk_deps")

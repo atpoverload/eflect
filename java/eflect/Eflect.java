@@ -8,6 +8,7 @@ import eflect.data.StackTraceAligner;
 import eflect.data.jiffies.JiffiesAccountant;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Supplier;
 
@@ -18,6 +19,7 @@ public abstract class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint
       int domainCount,
       double wrapAroundEnergy,
       IntUnaryOperator domainConversion,
+      ScheduledExecutorService executor,
       Duration period) {
     super(
         sources,
@@ -28,6 +30,7 @@ public abstract class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint
                         domainCount,
                         wrapAroundEnergy,
                         new JiffiesAccountant(domainCount, domainConversion)))),
+        executor,
         period);
   }
 }

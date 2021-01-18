@@ -1,6 +1,7 @@
 package eflect.experiments;
 
 import static clerk.util.ClerkUtil.getLogger;
+import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 import eflect.CpuFreqMonitor;
 import eflect.LinuxEflect;
@@ -8,38 +9,53 @@ import eflect.util.WriterUtils;
 import java.io.File;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.logging.Logger;
 
-public final class EflectProfiler {
+public final class EflectCalmnessMonitor {
   private static final Logger logger = getLogger();
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+  // private static final AtomicInteger counter = new AtomicInteger();
+  private static final ThreadFactory threadFactory =
+      r -> {
+        Thread t =
+            new Thread(
+                r, "eflect-" + r.getClass().getSimpleName()); // +  + counter.getAndIncrement());
+        t.setDaemon(true);
+        return t;
+      };
 
-  private static EflectProfiler instance;
+  private static EflectCalmnessMonitor instance;
 
-  public static synchronized EflectProfiler getInstance() {
+  public static synchronized EflectCalmnessMonitor getInstance() {
     if (instance == null) {
-      instance = new EflectProfiler();
+      instance = new EflectCalmnessMonitor();
     }
     return instance;
   }
 
   private final String outputPath;
 
+  private ScheduledExecutorService executor;
   private LinuxEflect eflect;
   private CpuFreqMonitor freqMonitor;
 
-  private EflectProfiler() {
+  private EflectCalmnessMonitor() {
     this.outputPath = System.getProperty("eflect.output", ".");
   }
 
   public void start(Duration period) {
     logger.info("starting eflect");
+    if (executor == null) {
+      executor = newScheduledThreadPool(5);
+    }
     if (!Duration.ZERO.equals(period)) {
-      eflect = new LinuxEflect(period);
+      eflect = new LinuxEflect(executor, period);
     } else {
       eflect = null;
     }
-    freqMonitor = new CpuFreqMonitor(Duration.ofMillis(500));
+    freqMonitor = new CpuFreqMonitor(executor, Duration.ofMillis(500));
 
     if (!Duration.ZERO.equals(period)) {
       eflect.start();
@@ -55,7 +71,7 @@ public final class EflectProfiler {
     logger.info("stopped eflect");
   }
 
-  public void dump(String dataDirectoryName, int iteration) {
+  public void dump(String dataDirectoryName, String tag) {
     File dataDirectory = new File(outputPath, dataDirectoryName);
     if (!dataDirectory.exists()) {
       dataDirectory.mkdirs();
@@ -63,10 +79,9 @@ public final class EflectProfiler {
     if (eflect != null) {
       WriterUtils.writeCsv(
           dataDirectory.getPath(),
-          "footprint-" + iteration + ".csv",
+          "footprint-" + tag + ".csv",
           "id,name,start,end,energy,trace", // header
           eflect.read()); // data
-      eflect.terminate();
     }
 
     String[] cpus = new String[CPU_COUNT];
@@ -75,9 +90,13 @@ public final class EflectProfiler {
     }
     WriterUtils.writeCsv(
         dataDirectory.getPath(),
-        "calmness-" + iteration + ".csv",
+        "calmness-" + tag + ".csv",
         String.join(",", "timestamp", String.join(",", cpus)), // header
         List.of(freqMonitor.read())); // data
-    freqMonitor.terminate();
+  }
+
+  public void shutdown() {
+    executor.shutdown();
+    executor = null;
   }
 }

@@ -11,12 +11,6 @@ def eflect_data_deps():
           shallow_since = "1603245714 -0400",
           remote = "https://github.com/timurbey/jRAPL.git",
       )
-    if not native.existing_rule("net_java_dev_jna_jna"):
-      maven_install(
-          name = "net_java_dev_jna_jna",
-          artifacts = ["net.java.dev.jna:jna:5.4.0"],
-          repositories = ["https://repo1.maven.org/maven2"],
-      )
     if not native.existing_rule("async-profiler"):
       native.new_local_repository(
           name = "async-profiler",
@@ -55,6 +49,7 @@ def eflect_experiment_deps():
         ],
         repositories = ["https://repo1.maven.org/maven2"],
     )
+  if not native.existing_rule("org_tensorflow_libtensorflow"):
     maven_install(
         name = "org_tensorflow_libtensorflow",
         artifacts = [

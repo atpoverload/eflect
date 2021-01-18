@@ -4,10 +4,10 @@ import eflect.data.Accountant;
 import eflect.data.Sample;
 import eflect.data.ThreadActivity;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.function.IntUnaryOperator;
-import java.util.Arrays;
 
 /** Processor that merges /proc/ samples into {@link ThreadActivity}s. */
 public final class JiffiesAccountant implements Accountant<Collection<ThreadActivity>> {
@@ -118,19 +118,33 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
   }
 
   /** Returns the data if it's accountable. Otherwise, an empty list is returned. */
-  // TODO(timurbey): i don't like discarding implicitly; maybe the accountant needs `discard()`.
   @Override
   public Collection<ThreadActivity> process() {
-    if (data != null || account() == Accountant.Result.ACCOUNTED) {
-      for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-        statMin[cpu] = statMax[cpu];
-      }
-      taskStatMin.clear();
-      taskStatMin.putAll(taskStatMax);
+    if (data != null || account() != Accountant.Result.UNACCOUNTABLE) {
       return data;
     } else {
       return new ArrayList<>();
     }
+  }
+
+  @Override
+  public void discardStart() {
+    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+      statMin[cpu] = statMax[cpu];
+    }
+    taskStatMin.clear();
+    taskStatMin.putAll(taskStatMax);
+    data = null;
+  }
+
+  @Override
+  public void discardEnd() {
+    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+      statMax[cpu] = statMin[cpu];
+    }
+    taskStatMax.clear();
+    taskStatMax.putAll(taskStatMin);
+    data = null;
   }
 
   private synchronized void addProcStat(long[] jiffies) {

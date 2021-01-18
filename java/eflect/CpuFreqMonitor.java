@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.concurrent.ScheduledExecutorService;
 
 /** A profiler that outputs timestamped cpu freqs. */
 public final class CpuFreqMonitor extends FixedPeriodClerk<String> {
@@ -36,7 +37,7 @@ public final class CpuFreqMonitor extends FixedPeriodClerk<String> {
     return freqs;
   }
 
-  public CpuFreqMonitor(Duration period) {
+  public CpuFreqMonitor(ScheduledExecutorService executor, Duration period) {
     super(
         () -> new CpuFreqSample(Instant.now(), readCpuFreqs()),
         new Processor<CpuFreqSample, String>() {
@@ -53,6 +54,7 @@ public final class CpuFreqMonitor extends FixedPeriodClerk<String> {
                 System.lineSeparator(), data.stream().map(x -> x.toString()).collect(toList()));
           }
         },
+        executor,
         period);
   }
 

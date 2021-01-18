@@ -110,14 +110,28 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
                 .setEnergy(taskEnergy)
                 .build());
       }
-      start = end;
-      for (int domain = 0; domain < domainCount; domain++) {
-        energyMin[domain][0] = energyMax[domain][0];
-      }
       return footprints;
     } else {
       return new ArrayList<EnergyFootprint>();
     }
+  }
+
+  @Override
+  public void discardStart() {
+    start = end;
+    for (int domain = 0; domain < domainCount; domain++) {
+      energyMin[domain][0] = energyMax[domain][0];
+    }
+    activityAccountant.discardStart();
+  }
+
+  @Override
+  public void discardEnd() {
+    end = start;
+    for (int domain = 0; domain < domainCount; domain++) {
+      energyMax[domain][0] = energyMin[domain][0];
+    }
+    activityAccountant.discardEnd();
   }
 
   private void addEnergy(double[][] energy) {

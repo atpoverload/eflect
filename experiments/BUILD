@@ -1,10 +1,10 @@
-load("@rules_java//java:defs.bzl", "java_binary")
+load("@rules_java//java:defs.bzl", "java_library", "java_binary")
 
 java_library(
-  name = "profiler",
+  name = "monitor",
   visibility = ["//visibility:public"],
   srcs = [
-    "EflectProfiler.java",
+    "EflectCalmnessMonitor.java",
   ],
   deps = [
     "@eflect//java/eflect:freq",
@@ -22,7 +22,7 @@ java_binary(
     "DaCapo.java",
   ],
   deps = [
-    ":profiler",
+    ":monitor",
     "@dacapo",
   ],
   jvm_flags = ["-Deflect.output=/home/timur/projects/data/dacapo"],
@@ -37,7 +37,7 @@ java_binary(
     "LabelImage.java",
   ],
   deps = [
-    ":profiler",
+    ":monitor",
     "@org_tensorflow_tensorflow",
     "@org_tensorflow_libtensorflow",
   ],

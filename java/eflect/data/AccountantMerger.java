@@ -44,6 +44,7 @@ public final class AccountantMerger<O> implements Processor<Sample, Collection<O
         }
         if (accountant.account() == Accountant.Result.ACCOUNTED) {
           results.addAll(accountant.process());
+          accountant.discardStart();
         }
       }
       data.clear();

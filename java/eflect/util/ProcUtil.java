@@ -1,30 +1,23 @@
 package eflect.util;
 
-import com.sun.jna.Library;
-import com.sun.jna.Native;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 
 /** Utility to access data from /proc/ */
+// TODO(timur): this should be moved to java/eflect/data/jiffies
 public class ProcUtil {
   // /proc/pid/task
-  private static interface libcl extends Library {
-    static libcl instance = (libcl) Native.loadLibrary("c", libcl.class);
-
-    int getpid();
-  }
-
-  private static final int pid = libcl.instance.getpid();
+  private static final long PID = ProcessHandle.current().pid();
 
   public static String[] getTasks() {
-    return new File(String.join(File.separator, "/proc", Integer.toString(pid), "task")).list();
+    return new File(String.join(File.separator, "/proc", Long.toString(PID), "task")).list();
   }
 
   public static ArrayList<String> readTaskStats() {
     ArrayList<String> stats = new ArrayList<String>();
-    File tasks = new File(String.join(File.separator, "/proc", Integer.toString(pid), "task"));
+    File tasks = new File(String.join(File.separator, "/proc", Long.toString(PID), "task"));
     for (File task : tasks.listFiles()) {
       File stat = new File(task, "stat");
       if (!stat.canRead()) {

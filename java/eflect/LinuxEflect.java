@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import jrapl.Rapl;
 import one.profiler.AsyncProfiler;
@@ -39,12 +40,13 @@ public final class LinuxEflect extends Eflect {
     return List.of(stat, task, rapl, async);
   }
 
-  public LinuxEflect(Duration period) {
+  public LinuxEflect(ScheduledExecutorService executor, Duration period) {
     super(
         getSources(),
         Rapl.getInstance().getSocketCount(),
         Rapl.getInstance().getWrapAroundEnergy(),
         cpu -> cpu / (CPU_COUNT / Rapl.getInstance().getSocketCount()),
+        executor,
         period);
   }
 }
