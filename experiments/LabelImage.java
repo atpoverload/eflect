@@ -60,12 +60,17 @@ public class LabelImage {
     byte[] imageBytes = readAllBytesOrExit(Paths.get(imageFile));
 
     try (Tensor<Float> image = constructAndExecuteGraphToNormalizeImage(imageBytes)) {
-      float[] labelProbabilities = executeInceptionGraph(graphDef, image);
-      int bestLabelIdx = maxIndex(labelProbabilities);
-      System.out.println(
-          String.format(
-              "BEST MATCH: %s (%.2f%% likely)",
-              labels.get(bestLabelIdx), labelProbabilities[bestLabelIdx] * 100f));
+      EflectCalmnessMonitor.getInstance().start(Duration.ofMillis(41));
+      for (int i = 0; i < 100; i++) {
+        float[] labelProbabilities = executeInceptionGraph(graphDef, image);
+      }
+      // int bestLabelIdx = maxIndex(labelProbabilities);
+      // System.out.println(
+      //     String.format(
+      //         "BEST MATCH: %s (%.2f%% likely)",
+      //         labels.get(bestLabelIdx), labelProbabilities[bestLabelIdx] * 100f));
+      EflectCalmnessMonitor.getInstance().stop();
+      EflectCalmnessMonitor.getInstance().dump(benchmark, Integer.toString(iteration++));
     }
   }
 
