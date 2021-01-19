@@ -1,6 +1,6 @@
 package eflect.experiments;
 
-import static clerk.util.ClerkUtil.getLogger;
+import static eflect.util.LoggerUtil.getLogger;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 import eflect.CpuFreqMonitor;
@@ -11,17 +11,16 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 public final class EflectCalmnessMonitor {
   private static final Logger logger = getLogger();
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-  // private static final AtomicInteger counter = new AtomicInteger();
+  private static final AtomicInteger counter = new AtomicInteger();
   private static final ThreadFactory threadFactory =
       r -> {
-        Thread t =
-            new Thread(
-                r, "eflect-" + r.getClass().getSimpleName()); // +  + counter.getAndIncrement());
+        Thread t = new Thread(r, "eflect-" + counter.getAndIncrement());
         t.setDaemon(true);
         return t;
       };

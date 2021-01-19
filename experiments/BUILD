@@ -10,7 +10,6 @@ java_library(
     "@eflect//java/eflect:freq",
     "@eflect//java/eflect:linux_eflect",
     "@eflect//java/eflect/util",
-    "@clerk//java/clerk/util",
   ]
 )
 
