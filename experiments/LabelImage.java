@@ -18,6 +18,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import org.tensorflow.DataType;
@@ -70,7 +71,7 @@ public class LabelImage {
       //         "BEST MATCH: %s (%.2f%% likely)",
       //         labels.get(bestLabelIdx), labelProbabilities[bestLabelIdx] * 100f));
       EflectCalmnessMonitor.getInstance().stop();
-      EflectCalmnessMonitor.getInstance().dump(benchmark, Integer.toString(iteration++));
+      EflectCalmnessMonitor.getInstance().dump("label_image", "");
     }
   }
 
