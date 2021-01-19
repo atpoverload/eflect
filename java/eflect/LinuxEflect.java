@@ -24,6 +24,8 @@ public final class LinuxEflect extends Eflect {
       Duration.ofMillis(
           Long.parseLong(System.getProperty("eflect.async.period", Integer.toString(2))));
 
+  private static boolean asyncRunning = false;
+
   private static String readAsyncProfiler() {
     AsyncProfiler.getInstance().stop();
     String traces = AsyncProfiler.getInstance().dumpRecords();
@@ -32,7 +34,10 @@ public final class LinuxEflect extends Eflect {
   }
 
   private static Collection<Supplier<?>> getSources() {
-    AsyncProfiler.getInstance().start(Events.CPU, asyncRate.getNano());
+    if (!asyncRunning) {
+      AsyncProfiler.getInstance().start(Events.CPU, asyncRate.getNano());
+      asyncRunning = true;
+    }
     Supplier<?> stat = () -> new ProcStatSample(Instant.now(), readProcStat());
     Supplier<?> task = () -> new ProcTaskSample(Instant.now(), readTaskStats());
     Supplier<?> rapl = () -> new EnergySample(Instant.now(), Rapl.getInstance().getEnergyStats());
