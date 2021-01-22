@@ -47,7 +47,7 @@ public final class EflectCalmnessMonitor {
   public void start(Duration period) {
     logger.info("starting eflect");
     if (executor == null) {
-      executor = newScheduledThreadPool(5);
+      executor = newScheduledThreadPool(5, threadFactory);
     }
     if (!Duration.ZERO.equals(period)) {
       eflect = new LinuxEflect(executor, period);
@@ -68,6 +68,30 @@ public final class EflectCalmnessMonitor {
     }
     freqMonitor.stop();
     logger.info("stopped eflect");
+  }
+
+  public void dump(String dataDirectoryName) {
+    File dataDirectory = new File(outputPath, dataDirectoryName);
+    if (!dataDirectory.exists()) {
+      dataDirectory.mkdirs();
+    }
+    if (eflect != null) {
+      WriterUtils.writeCsv(
+          dataDirectory.getPath(),
+          "footprint.csv",
+          "id,name,start,end,energy,trace", // header
+          eflect.read()); // data
+    }
+
+    String[] cpus = new String[CPU_COUNT];
+    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+      cpus[cpu] = Integer.toString(cpu);
+    }
+    WriterUtils.writeCsv(
+        dataDirectory.getPath(),
+        "calmness.csv",
+        String.join(",", "timestamp", String.join(",", cpus)), // header
+        List.of(freqMonitor.read())); // data
   }
 
   public void dump(String dataDirectoryName, String tag) {

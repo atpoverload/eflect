@@ -12,27 +12,33 @@ def eflect_data_deps():
           remote = "https://github.com/timurbey/jRAPL.git",
       )
     if not native.existing_rule("async-profiler"):
-      native.new_local_repository(
+      git_repository(
           name = "async-profiler",
-          path = "./async-profiler",
-          build_file_content = """
-load("@rules_java//java:defs.bzl", "java_import")
-
-filegroup(
-    name = "lib-async-profiler",
-    srcs = ["build/libasyncProfiler.so"],
-    visibility = ["//visibility:public"],
-)
-
-java_import(
-    name = "async-profiler",
-    visibility = ["//visibility:public"],
-    jars = [
-      "build/async-profiler.jar"
-    ],
-)
-"""
+          commit = "4b50e7a3d9618741f9af6c92c4654accd8f60926",
+          shallow_since = "1603245714 -0400",
+          remote = "https://github.com/timurbey/async-profiler.git",
       )
+#       native.new_local_repository(
+#           name = "async-profiler",
+#           path = "./async-profiler",
+#           build_file_content = """
+# load("@rules_java//java:defs.bzl", "java_import")
+#
+# filegroup(
+#     name = "lib-async-profiler",
+#     srcs = ["build/libasyncProfiler.so"],
+#     visibility = ["//visibility:public"],
+# )
+#
+# java_import(
+#     name = "async-profiler",
+#     visibility = ["//visibility:public"],
+#     jars = [
+#       "build/async-profiler.jar"
+#     ],
+# )
+# """
+#       )
 
 def eflect_experiment_deps():
   """Loads the dependencies to run eflect's experiments."""

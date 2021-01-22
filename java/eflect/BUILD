@@ -3,7 +3,7 @@ load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 genrule(
   name = "async-profiler-lib",
   visibility = ["//visibility:public"],
-  srcs = ["@async-profiler//:lib-async-profiler"],
+  srcs = ["@async-profiler//src:libasyncProfiler.so"],
   outs = ["libasyncProfiler.so"],
   cmd = "cp -f $< $@",
 )
@@ -42,7 +42,7 @@ java_library(
     ":eflect",
     "//java/eflect/data/async",
     "//java/eflect/util",
-    "@async-profiler",
+    "@async-profiler//src/java/one/profiler",
     "@jRAPL//src/java/jrapl",
   ],
   exports = [
