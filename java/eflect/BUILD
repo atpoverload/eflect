@@ -42,7 +42,7 @@ java_library(
     ":eflect",
     "//java/eflect/data/async",
     "//java/eflect/util",
-    "@async-profiler//src/java/one/profiler",
+    "@async-profiler",
     "@jRAPL//src/java/jrapl",
   ],
   exports = [
