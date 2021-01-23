@@ -3,7 +3,7 @@ load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 genrule(
   name = "async-profiler-lib",
   visibility = ["//visibility:public"],
-  srcs = ["@async-profiler//src:libasyncProfiler.so"],
+  srcs = ["@async-profiler//:lib-async-profiler"],
   outs = ["libasyncProfiler.so"],
   cmd = "cp -f $< $@",
 )
