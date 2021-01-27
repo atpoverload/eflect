@@ -17,7 +17,7 @@ public final class DaCapo extends Callback {
   @Override
   public void start(String benchmark) {
     this.benchmark = benchmark;
-    EflectCalmnessMonitor.getInstance().start(Duration.ofMillis(41));
+    EflectCalmnessMonitor.getInstance().start(41);
     super.start(benchmark);
   }
 

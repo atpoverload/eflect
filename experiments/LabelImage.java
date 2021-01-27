@@ -63,8 +63,8 @@ public class LabelImage {
     try (Tensor<Float> image = constructAndExecuteGraphToNormalizeImage(imageBytes)) {
       // TODO(timur): this period is very slow because we hang on the short-lived threads when we
       // read with proc
-      EflectCalmnessMonitor.getInstance().start(Duration.ofMillis(500));
-      for (int i = 0; i < 100; i++) {
+      EflectCalmnessMonitor.getInstance().start(500);
+      for (int i = 0; i < 250; i++) {
         float[] labelProbabilities = executeInceptionGraph(graphDef, image);
       }
       EflectCalmnessMonitor.getInstance().stop();

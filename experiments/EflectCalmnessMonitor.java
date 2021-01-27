@@ -44,11 +44,12 @@ public final class EflectCalmnessMonitor {
     this.outputPath = System.getProperty("eflect.output", ".");
   }
 
-  public void start(Duration period) {
+  public void start(long periodMillis) {
     logger.info("starting eflect");
     if (executor == null) {
       executor = newScheduledThreadPool(5, threadFactory);
     }
+    Duration period = Duration.ofMillis(periodMillis);
     if (!Duration.ZERO.equals(period)) {
       eflect = new LinuxEflect(executor, period);
     } else {

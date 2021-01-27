@@ -79,7 +79,7 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
 
     // check the energy
     for (int domain = 0; domain < domainCount; domain++) {
-      if (energyMax[domain][0] == energyMin[domain][0]) {
+      if (energyMax[domain][0] < 0 || energyMin[domain][0] < 0 || energyMax[domain][0] == energyMin[domain][0]) {
         return Accountant.Result.UNACCOUNTABLE;
       }
     }
@@ -139,6 +139,9 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
       double domainEnergy = 0;
       for (double e : energy[domain]) {
         domainEnergy += e;
+      }
+      if (domainEnergy < 0) {
+        continue;
       }
       if (energyMin[domain][0] < 0 || domainEnergy < energyMin[domain][0]) {
         energyMin[domain][0] = domainEnergy;

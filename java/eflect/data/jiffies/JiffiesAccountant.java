@@ -72,6 +72,9 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
     // check the cpu jiffies
     long[] domainJiffies = new long[domainCount];
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+      if (statMin[cpu] < 0 || statMax[cpu] < 0) {
+        return Accountant.Result.UNACCOUNTABLE;
+      }
       int domain = domainConversion.applyAsInt(cpu);
       domainJiffies[domain] += statMax[cpu] - statMin[cpu];
     }
@@ -149,6 +152,9 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
 
   private synchronized void addProcStat(long[] jiffies) {
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+      if (jiffies[cpu] == -1) {
+        continue;
+      }
       if (statMin[cpu] == -1 || jiffies[cpu] < statMin[cpu]) {
         statMin[cpu] = jiffies[cpu];
       }
