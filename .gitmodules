@@ -4,3 +4,4 @@
 [submodule "experiments/tensorflow"]
 	path = experiments/tensorflow
 	url = https://github.com/timurbey/tensorflow.git
+	branch = jni-unstripped
