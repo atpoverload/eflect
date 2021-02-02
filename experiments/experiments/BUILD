@@ -1,4 +1,5 @@
 load("@rules_java//java:defs.bzl", "java_library", "java_binary")
+load("@eflect_experiments//:eflect_experiment_defs.bzl", "eflect_jmh_benchmark")
 
 java_library(
   name = "monitor",
@@ -37,8 +38,8 @@ java_binary(
   ],
   deps = [
     ":monitor",
-    "@org_tensorflow_tensorflow",
-    "@org_tensorflow_libtensorflow",
+    "@tensorflow",
+    "@tensorflow:libtensorflow_jni",
   ],
   jvm_flags = ["-Deflect.output=/home/timur/projects/data/tensorflow"]
 )
