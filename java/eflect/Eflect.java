@@ -12,7 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Supplier;
 
-/** A profiler that estimates the energy consumed by the current application. */
+/** A clerk that uses the eflect algorithm as a {@link Processor}. */
 public abstract class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint>> {
   protected Eflect(
       Collection<Supplier<?>> sources,

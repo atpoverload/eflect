@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.function.IntUnaryOperator;
 
 /** Processor that merges /proc/ samples into {@link ThreadActivity}s. */
+// TODO(timur): add(), account(), and discard() have races with each other
 public final class JiffiesAccountant implements Accountant<Collection<ThreadActivity>> {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
@@ -70,6 +71,7 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
     }
 
     // check the cpu jiffies
+    // TODO(timur): synchronize the cpu jiffies with add()
     long[] domainJiffies = new long[domainCount];
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
       if (statMin[cpu] < 0 || statMax[cpu] < 0) {
@@ -85,6 +87,7 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
     }
 
     // check the task jiffies
+    // TODO(timur): synchronize the task jiffies with add()
     long[] applicationJiffies = new long[domainCount];
     ArrayList<ProcThreadActivityBuilder> tasks = new ArrayList<>();
     for (long id : taskStatMin.keySet()) {
@@ -130,6 +133,8 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
     }
   }
 
+  /** Sets the min values to the max values. */
+  // TODO(timur): synchronize with add
   @Override
   public void discardStart() {
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
@@ -140,6 +145,8 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
     data = null;
   }
 
+  /** Sets the max values to the min values. */
+  // TODO(timur): synchronize with add
   @Override
   public void discardEnd() {
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {

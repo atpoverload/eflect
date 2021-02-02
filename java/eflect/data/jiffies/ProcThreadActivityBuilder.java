@@ -3,6 +3,7 @@ package eflect.data.jiffies;
 import eflect.data.ThreadActivity;
 
 /** Builder for {@link ThreadActivity} from /proc/ data. */
+// TODO(timur): this is a little sketchy
 final class ProcThreadActivityBuilder {
   long id;
   String name;

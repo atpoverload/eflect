@@ -1,11 +1,11 @@
 package eflect.experiments;
 
 import static eflect.util.LoggerUtil.getLogger;
+import static eflect.util.WriterUtil.writeCsv;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 import eflect.CpuFreqMonitor;
 import eflect.LinuxEflect;
-import eflect.util.WriterUtils;
 import java.io.File;
 import java.time.Duration;
 import java.util.List;
@@ -77,7 +77,7 @@ public final class EflectCalmnessMonitor {
       dataDirectory.mkdirs();
     }
     if (eflect != null) {
-      WriterUtils.writeCsv(
+      writeCsv(
           dataDirectory.getPath(),
           "footprint.csv",
           "id,name,start,end,energy,trace", // header
@@ -88,7 +88,7 @@ public final class EflectCalmnessMonitor {
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
       cpus[cpu] = Integer.toString(cpu);
     }
-    WriterUtils.writeCsv(
+    writeCsv(
         dataDirectory.getPath(),
         "calmness.csv",
         String.join(",", "timestamp", String.join(",", cpus)), // header
@@ -101,7 +101,7 @@ public final class EflectCalmnessMonitor {
       dataDirectory.mkdirs();
     }
     if (eflect != null) {
-      WriterUtils.writeCsv(
+      writeCsv(
           dataDirectory.getPath(),
           "footprint-" + tag + ".csv",
           "id,name,start,end,energy,trace", // header
@@ -112,7 +112,7 @@ public final class EflectCalmnessMonitor {
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
       cpus[cpu] = Integer.toString(cpu);
     }
-    WriterUtils.writeCsv(
+    writeCsv(
         dataDirectory.getPath(),
         "calmness-" + tag + ".csv",
         String.join(",", "timestamp", String.join(",", cpus)), // header

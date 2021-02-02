@@ -24,6 +24,7 @@ public class ProcUtil {
         continue;
       }
       try (BufferedReader reader = new BufferedReader(new FileReader(stat))) {
+        // TODO(timur): fix the hang that occurs here
         stats.add(reader.readLine());
       } catch (Exception e) {
         e.printStackTrace();

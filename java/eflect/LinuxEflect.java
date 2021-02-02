@@ -17,12 +17,10 @@ import jrapl.Rapl;
 import one.profiler.AsyncProfiler;
 import one.profiler.Events;
 
-/** A profiler that estimates the energy consumed by the current application. */
+/** A clerk that estimates the energy consumed by an application on an intel linux system. */
 public final class LinuxEflect extends Eflect {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-  private static final Duration asyncRate =
-      Duration.ofMillis(
-          Long.parseLong(System.getProperty("eflect.async.period", Integer.toString(2))));
+  private static final Duration asyncRate = Duration.ofMillis(2);
 
   private static boolean asyncRunning = false;
 

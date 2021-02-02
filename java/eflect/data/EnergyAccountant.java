@@ -7,16 +7,16 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /** Processor that merges samples into task energy footprints. */
+// TODO(timur): add(), account(), and discard() have races with each other
 public final class EnergyAccountant implements Accountant<Collection<EnergyFootprint>> {
   private final int domainCount;
   private final double wrapAround;
   private final Accountant<Collection<ThreadActivity>> activityAccountant;
-  private final ArrayList<EnergySample> samples = new ArrayList<>();
+  private final double[][] energyMin;
+  private final double[][] energyMax;
 
   private Instant start = Instant.MAX;
   private Instant end = Instant.MIN;
-  private final double[][] energyMin;
-  private final double[][] energyMax;
 
   public EnergyAccountant(
       int domainCount,
@@ -68,6 +68,7 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
    *
    * <p>Returns the result of the {@link ActivityAccountant} otherwise.
    */
+  // TODO(timur): synchronize with add
   @Override
   public Accountant.Result account() {
     // check the timestamps
@@ -79,7 +80,9 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
 
     // check the energy
     for (int domain = 0; domain < domainCount; domain++) {
-      if (energyMax[domain][0] < 0 || energyMin[domain][0] < 0 || energyMax[domain][0] == energyMin[domain][0]) {
+      if (energyMax[domain][0] < 0
+          || energyMin[domain][0] < 0
+          || energyMax[domain][0] == energyMin[domain][0]) {
         return Accountant.Result.UNACCOUNTABLE;
       }
     }
@@ -88,6 +91,7 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
   }
 
   /** Returns the data if it's accountable. Otherwise, return an empty list. */
+  // TODO(timur): synchronize with add
   @Override
   public Collection<EnergyFootprint> process() {
     if (account() != Accountant.Result.UNACCOUNTABLE) {
@@ -116,6 +120,8 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
     }
   }
 
+  /** Sets the min values to the max values. */
+  // TODO(timur): synchronize with add
   @Override
   public void discardStart() {
     start = end;
@@ -125,6 +131,8 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
     activityAccountant.discardStart();
   }
 
+  /** Sets the max values to the min values. */
+  // TODO(timur): synchronize with add
   @Override
   public void discardEnd() {
     end = start;

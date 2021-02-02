@@ -26,7 +26,7 @@ public final class StackTraceAligner implements Processor<Sample, Collection<Ene
         add(sample);
       }
     } else if (s instanceof StackTraceSample) {
-      addSample((StackTraceSample) s);
+      addStackTrace((StackTraceSample) s);
     } else {
       energyProcessor.add(s);
     }
@@ -44,6 +44,7 @@ public final class StackTraceAligner implements Processor<Sample, Collection<Ene
         if (footprintGroups.contains(timestamp)) {
           for (StackTraceSample sample : samples.get(timestamp)) {
             if (footprintGroups.get(timestamp).containsKey(sample.getId())) {
+              // TODO(timur): do we want to include the timestamp for the traces?
               footprintGroups
                   .get(timestamp)
                   .get(sample.getId())
@@ -66,7 +67,7 @@ public final class StackTraceAligner implements Processor<Sample, Collection<Ene
     return footprints;
   }
 
-  private void addSample(StackTraceSample sample) {
+  private void addStackTrace(StackTraceSample sample) {
     synchronized (samples) {
       if (!samples.containsKey(sample.getTimestamp())) {
         samples.put(sample.getTimestamp(), new ArrayList<StackTraceSample>());

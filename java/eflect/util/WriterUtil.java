@@ -8,7 +8,7 @@ import java.io.PrintWriter;
 /** Utility to write csv data. */
 // TODO(timur): the entire data exchange will eventually have to change, so this will eventually go
 // away
-public final class WriterUtils {
+public final class WriterUtil {
   public static void writeCsv(String directory, String fileName, String header, Iterable<?> data) {
     try (PrintWriter writer = new PrintWriter(new FileWriter(new File(directory, fileName)))) {
       writer.println(header);
