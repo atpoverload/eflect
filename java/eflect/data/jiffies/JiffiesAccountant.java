@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.function.IntUnaryOperator;
 
-/** Processor that merges /proc/ samples into {@link ThreadActivity}s. */
+/** Processor that merges /proc samples into {@link ThreadActivity}s. */
 // TODO(timur): add(), account(), and discard() have races with each other
 public final class JiffiesAccountant implements Accountant<Collection<ThreadActivity>> {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();

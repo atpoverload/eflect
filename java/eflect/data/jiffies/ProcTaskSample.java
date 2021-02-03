@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-/** A sample of jiffies consumed as reported by /proc/stat/[pid]/task/[tid]/stat. */
+/** A sample of jiffies consumed as reported by /proc/[pid]/task/[tid]/stat. */
 public final class ProcTaskSample implements Sample {
   private static final int STAT_LENGTH = 52;
   private static final int TID_INDEX = 0;
@@ -28,7 +28,6 @@ public final class ProcTaskSample implements Sample {
   }
 
   /** Parse and return the stat details from the stat strings. */
-  // TODO(timurbey): let's throw failures here?
   public Collection<TaskStat> getTaskStats() {
     ArrayList<TaskStat> taskStats = new ArrayList<>();
     for (String s : stats) {

@@ -17,7 +17,7 @@ import jrapl.Rapl;
 import one.profiler.AsyncProfiler;
 import one.profiler.Events;
 
-/** A clerk that estimates the energy consumed by an application on an intel linux system. */
+/** A Clerk that estimates the energy consumed by an application on an intel linux system. */
 public final class LinuxEflect extends Eflect {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
   private static final Duration asyncRate = Duration.ofMillis(2);
