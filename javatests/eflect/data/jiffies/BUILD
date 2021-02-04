@@ -1,9 +1,9 @@
 load("@rules_java//java:defs.bzl", "java_test")
 
 java_test(
-  name = "JiffiesAccountantTest1",
-  srcs = ["JiffiesAccountantTest1.java"],
-  test_class = "eflect.data.jiffies.JiffiesAccountantTest1",
+  name = "JiffiesAccountantTest_NotEnoughData",
+  srcs = ["JiffiesAccountantTest_NotEnoughData.java"],
+  test_class = "eflect.data.jiffies.JiffiesAccountantTest_NotEnoughData",
   deps = [
     "//java/eflect/data",
     "//java/eflect/data/jiffies",
@@ -12,9 +12,9 @@ java_test(
 )
 
 java_test(
-  name = "JiffiesAccountantTest2",
-  srcs = ["JiffiesAccountantTest2.java"],
-  test_class = "eflect.data.jiffies.JiffiesAccountantTest2",
+  name = "JiffiesAccountantTest_AccountableData",
+  srcs = ["JiffiesAccountantTest_AccountableData.java"],
+  test_class = "eflect.data.jiffies.JiffiesAccountantTest_AccountableData",
   deps = [
     "//java/eflect/data",
     "//java/eflect/data/jiffies",

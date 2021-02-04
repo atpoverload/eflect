@@ -10,7 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /** Tests for operations when there isn't enough data to accountant. */
-public class JiffiesAccountantTest1 {
+public class JiffiesAccountantTest_NotEnoughData {
   private FakeProcStat procStat;
   private FakeProcTask procTask;
   private JiffiesAccountant accountant;

@@ -11,7 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 // TODO(timur): add tests for discard
-public class JiffiesAccountantTest2 {
+public class JiffiesAccountantTest_AccountableData {
   private FakeProcStat procStat;
   private FakeProcTask procTask;
   private JiffiesAccountant accountant;

@@ -8,9 +8,9 @@ import java.util.Collection;
 
 /** Processor that merges samples into a footprint with task granularity. */
 public final class FakeAccountant<O> implements Accountant<Collection<O>> {
-  private Instant timestamp;
-  private Accountant.Result result = Accountant.Result.ACCOUNTED;
-  private Collection<O> data;
+  private Instant timestamp = Instant.MIN;
+  private Accountant.Result result = Accountant.Result.UNACCOUNTABLE;
+  private Collection<O> data = new ArrayList<>();
 
   public FakeAccountant() {}
 
@@ -32,9 +32,11 @@ public final class FakeAccountant<O> implements Accountant<Collection<O>> {
     if (other instanceof FakeAccountant) {
       FakeAccountant accountant = (FakeAccountant) other;
       Collection<O> data = new ArrayList<>();
+      this.timestamp = this.timestamp != Instant.MIN ? this.timestamp : accountant.timestamp;
       data.addAll(this.data);
       data.addAll(accountant.data);
       this.data = data;
+      this.result = this.result != Result.UNACCOUNTABLE ? this.result : accountant.result;
     }
   }
 
@@ -55,11 +57,19 @@ public final class FakeAccountant<O> implements Accountant<Collection<O>> {
 
   /** Does nothing with the data. */
   @Override
-  public void discardStart() {}
+  public void discardStart() {
+    timestamp = Instant.MIN;
+    result = Accountant.Result.UNACCOUNTABLE;
+    data = new ArrayList<>();
+  }
 
   /** Does nothing with the data. */
   @Override
-  public void discardEnd() {}
+  public void discardEnd() {
+    timestamp = Instant.MIN;
+    result = Accountant.Result.UNACCOUNTABLE;
+    data = new ArrayList<>();
+  }
 
   public void setTimestamp(Instant timestamp) {
     this.timestamp = timestamp;
