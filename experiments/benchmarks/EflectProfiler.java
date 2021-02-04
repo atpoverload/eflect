@@ -32,12 +32,14 @@ public final class EflectProfiler implements ExternalProfiler {
       };
   private static final ScheduledExecutorService executor = newScheduledThreadPool(5, threadFactory);
 
-  private static Collection<EflectResult> sum(Collection<EnergyFootprint> footprints) {
+  private static Collection<EflectResult> sum(
+      Collection<EnergyFootprint> footprints, BenchmarkResult result) {
     double energy = 0;
     for (EnergyFootprint footprint : footprints) {
       energy += footprint.energy;
     }
-    return List.of(new EflectResult(new double[] {energy}));
+    return List.of(
+        new EflectResult(new double[] {energy / br.getPrimaryResult().getStatistics().getN()}));
   }
 
   private LinuxEflect eflect;
@@ -56,7 +58,7 @@ public final class EflectProfiler implements ExternalProfiler {
     eflect.stop();
     Collection<EnergyFootprint> footprints = eflect.read();
     eflect = null;
-    return sum(footprints);
+    return sum(footprints, br);
   }
 
   @Override
