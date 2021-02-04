@@ -25,7 +25,11 @@ public final class AsyncProfilerSample implements SampleCollection {
   public Collection<Sample> getSamples() {
     ArrayList<Sample> samples = new ArrayList();
     for (String record : records.split("\n")) {
-      samples.add(new AsyncStackTraceSample(record));
+      String[] entries = data.split(",");
+      Instant timestamp = Instant.ofEpochMilli(Long.parseLong(data.split(",")[0]));
+      int id = id.split(",")[1];
+      String stackTrace = data.split(",")[2];
+      samples.add(new StackTraceSample(timestamp, id, stackTrace));
     }
     return samples;
   }
