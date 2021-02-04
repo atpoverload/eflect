@@ -39,7 +39,7 @@ public final class EflectProfiler implements ExternalProfiler {
       energy += footprint.energy;
     }
     return List.of(
-        new EflectResult(new double[] {energy / br.getPrimaryResult().getStatistics().getN()}));
+        new EflectResult(new double[] {energy / result.getPrimaryResult().getStatistics().getN()}));
   }
 
   private LinuxEflect eflect;
