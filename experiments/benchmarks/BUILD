@@ -26,6 +26,5 @@ eflect_jmh_benchmark(
   ],
   deps = [
     ":profiler",
-    "//jmh:fake_linux",
   ]
 )

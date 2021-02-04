@@ -22,7 +22,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 /** A profiler that reports the total amount of energy consumed by the benchmark. */
-public abstract class EflectProfiler implements ExternalProfiler {
+public final class EflectProfiler implements ExternalProfiler {
   private static final AtomicInteger counter = new AtomicInteger(0);
   private static final ThreadFactory threadFactory =
       r -> {
