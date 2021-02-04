@@ -1,0 +1,60 @@
+workspace(name = "eflect_experiments")
+
+# have to do this until i figure out how to get it to work as a repo
+new_local_repository(
+      name = "async-profiler",
+      path = "../async-profiler",
+      build_file_content = """
+load("@rules_java//java:defs.bzl", "java_import")
+
+filegroup(
+name = "lib-async-profiler",
+srcs = ["build/libasyncProfiler.so"],
+visibility = ["//visibility:public"],
+)
+
+java_import(
+name = "async-profiler",
+visibility = ["//visibility:public"],
+jars = [
+  "build/async-profiler.jar"
+],
+)
+"""
+)
+
+local_repository(
+  name = "eflect",
+  path = "..",
+)
+load("@eflect//:eflect_deps.bzl", "eflect_deps")
+eflect_deps()
+
+# experiments
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "dacapo",
+    urls = ["https://clerk-deps.s3.amazonaws.com/dacapo.zip"],
+)
+
+new_local_repository(
+    name = "tensorflow",
+    path = "./tensorflow/bazel-bin/tensorflow/java",
+    build_file_content = """
+load("@rules_java//java:defs.bzl", "java_import")
+
+filegroup(
+    name = "lib-tensorflow",
+    srcs = ["libtensorflow_jni.so"],
+    visibility = ["//visibility:public"],
+)
+
+java_import(
+  name = "tensorflow",
+  visibility = ["//visibility:public"],
+  jars = [
+    "libtensorflow.jar"
+  ],
+)
+"""
+)
