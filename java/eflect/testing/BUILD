@@ -1,34 +1,40 @@
 load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 
+genrule(
+  name = "lib-async-profiler",
+  visibility = ["//visibility:public"],
+  srcs = ["@async-profiler//:lib-async-profiler"],
+  outs = ["libasyncProfiler.so"],
+  cmd = "cp -f $< $@",
+)
+
 java_library(
   name = "testing",
   visibility = ["//visibility:public"],
-  srcs = ["DummyEflect.java"],
+  srcs = ["FakeLinuxEflect.java"],
   deps = [
-    "//java/eflect/data",
+    "//java/eflect",
     "//java/eflect/data/async",
-    "//java/eflect/data/jiffies",
-    "//java/eflect/util:proc",
-    "@clerk//java/clerk",
-    "@clerk//java/clerk:fixed_period",
+    "//java/eflect/util",
+    "@async-profiler",
   ],
   exports = [
+    "//java/eflect",
     "//java/eflect/data",
-    "//java/eflect/data/async",
-    "//java/eflect/data/jiffies",
-    "@clerk//java/clerk",
-    "@clerk//java/clerk:fixed_period",
   ],
+  data = [
+    ":lib-async-profiler",
+  ]
 )
 
 java_binary(
   name = "driver",
   visibility = ["//visibility:private"],
-  main_class = "eflect.testing.DummyEflectDriver",
-  srcs = ["DummyEflectDriver.java"],
-  deps = [
+  main_class = "eflect.testing.FakeLinuxEflect",
+  runtime_deps = [
     ":testing",
-    "//java/eflect/util",
   ],
-  jvm_flags = ["-Deflect.output=/home/timur/projects/eflect"],
+  data = [
+
+  ]
 )
