@@ -37,6 +37,7 @@ java_binary(
   ],
   deps = [
     ":monitor",
+    "//experiments/util",
     "@tensorflow",
   ],
   jvm_flags = [
