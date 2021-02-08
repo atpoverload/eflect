@@ -3,22 +3,22 @@ workspace(name = "eflect_experiments")
 # have to do this until i figure out how to get it to work as a repo
 new_local_repository(
       name = "async-profiler",
-      path = "../async-profiler",
+      path = "../third_party/async-profiler",
       build_file_content = """
 load("@rules_java//java:defs.bzl", "java_import")
 
 filegroup(
-name = "lib-async-profiler",
-srcs = ["build/libasyncProfiler.so"],
-visibility = ["//visibility:public"],
+  name = "lib-async-profiler",
+  srcs = ["build/libasyncProfiler.so"],
+  visibility = ["//visibility:public"],
 )
 
 java_import(
-name = "async-profiler",
-visibility = ["//visibility:public"],
-jars = [
-  "build/async-profiler.jar"
-],
+  name = "async-profiler",
+  visibility = ["//visibility:public"],
+  jars = [
+    "build/async-profiler.jar"
+  ],
 )
 """
 )
@@ -39,14 +39,14 @@ http_archive(
 
 new_local_repository(
     name = "tensorflow",
-    path = "./tensorflow/bazel-bin/tensorflow/java",
+    path = "./third_party/tensorflow/bazel-bin/tensorflow/java",
     build_file_content = """
 load("@rules_java//java:defs.bzl", "java_import")
 
 filegroup(
-    name = "lib-tensorflow",
-    srcs = ["libtensorflow_jni.so"],
-    visibility = ["//visibility:public"],
+  name = "lib-tensorflow",
+  srcs = ["libtensorflow_jni.so"],
+  visibility = ["//visibility:public"],
 )
 
 java_import(

@@ -1,7 +1,7 @@
 [submodule "async-profiler"]
-	path = async-profiler
+	path = third_party/async-profiler
 	url = https://github.com/timurbey/async-profiler.git
 [submodule "experiments/tensorflow"]
-	path = experiments/tensorflow
+	path = experiments/third_party/tensorflow
 	url = https://github.com/timurbey/tensorflow.git
 	branch = jni-unstripped

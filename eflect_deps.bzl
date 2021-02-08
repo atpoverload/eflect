@@ -19,7 +19,7 @@ def eflect_deps():
     if not native.existing_rule("async-profiler"):
       native.new_local_repository(
           name = "async-profiler",
-          path = "./async-profiler",
+          path = "./third_party/async-profiler",
           build_file_content = """
 load("@rules_java//java:defs.bzl", "java_import")
 
