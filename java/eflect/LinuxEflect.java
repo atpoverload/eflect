@@ -39,7 +39,7 @@ public final class LinuxEflect extends Eflect {
     Supplier<?> stat = () -> new ProcStatSample(Instant.now(), readProcStat());
     Supplier<?> task = () -> new ProcTaskSample(Instant.now(), readTaskStats());
     Supplier<?> rapl = () -> new EnergySample(Instant.now(), Rapl.getInstance().getEnergyStats());
-    Supplier<?> async = () -> new AsyncProfilerSample(readAsyncProfiler());
+    Supplier<?> async = () -> new AsyncProfilerSample(Instant.now(), readAsyncProfiler());
     return List.of(stat, task, rapl, async);
   }
 

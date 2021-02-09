@@ -27,6 +27,7 @@ public final class EflectCalmnessMonitor {
 
   private static EflectCalmnessMonitor instance;
 
+  /** Creates an instance of the underlying class if it hasn't been created yet. */
   public static synchronized EflectCalmnessMonitor getInstance() {
     if (instance == null) {
       instance = new EflectCalmnessMonitor();
@@ -40,10 +41,18 @@ public final class EflectCalmnessMonitor {
   private LinuxEflect eflect;
   private CpuFreqMonitor freqMonitor;
 
+  // TODO(timur): i'm not sure how much this class wrapper needs to do
   private EflectCalmnessMonitor() {
     this.outputPath = System.getProperty("eflect.output", ".");
   }
 
+  /**
+   * Creates and starts instances of eflect and the calmness monitor.
+   *
+   * <p>If there is no existing executor, a new thread pool is spun-up.
+   *
+   * <p>If the period is 0, an eflect will not be created.
+   */
   public void start(long periodMillis) {
     logger.info("starting eflect");
     if (executor == null) {
@@ -63,6 +72,7 @@ public final class EflectCalmnessMonitor {
     freqMonitor.start();
   }
 
+  /** Stops any running collectors. */
   public void stop() {
     if (eflect != null) {
       eflect.stop();
@@ -71,6 +81,8 @@ public final class EflectCalmnessMonitor {
     logger.info("stopped eflect");
   }
 
+  // TODO(timur): all of these dump methods need to be updated when we change the footprint.
+  /** Writes the data in the collectors to the provided directory. */
   public void dump(String dataDirectoryName) {
     File dataDirectory = new File(outputPath, dataDirectoryName);
     if (!dataDirectory.exists()) {
@@ -119,6 +131,7 @@ public final class EflectCalmnessMonitor {
         List.of(freqMonitor.read())); // data
   }
 
+  /** Shutdown the executor. */
   public void shutdown() {
     executor.shutdown();
     executor = null;

@@ -9,16 +9,18 @@ import java.util.Collection;
 
 /** Sample collection of async-profiler records. */
 public final class AsyncProfilerSample implements SampleCollection {
+  private final Instant timestamp;
   private final String records;
 
-  public AsyncProfilerSample(String records) {
+  public AsyncProfilerSample(Instant timestamp, String records) {
+    this.timestamp = timestamp;
     this.records = records;
   }
 
-  /** Return a dummy timestamp. */
+  /** Return the stored timestamp. */
   @Override
   public Instant getTimestamp() {
-    return Instant.EPOCH;
+    return timestamp;
   }
 
   /** Parse and return the jiffies from the stat strings. */
