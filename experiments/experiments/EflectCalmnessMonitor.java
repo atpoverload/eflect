@@ -8,11 +8,13 @@ import eflect.CpuFreqMonitor;
 import eflect.LinuxEflect;
 import java.io.File;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import jrapl.Rapl;
 
 public final class EflectCalmnessMonitor {
   private static final Logger logger = getLogger();
@@ -36,6 +38,8 @@ public final class EflectCalmnessMonitor {
   }
 
   private final String outputPath;
+  private final Instant[] time = new Instant[2];
+  private final double[][][] energy = new double[2][][];
 
   private ScheduledExecutorService executor;
   private LinuxEflect eflect;
@@ -66,6 +70,8 @@ public final class EflectCalmnessMonitor {
     }
     freqMonitor = new CpuFreqMonitor(executor, Duration.ofMillis(500));
 
+    time[0] = Instant.now();
+    energy[0] = Rapl.getInstance().getEnergyStats();
     if (!Duration.ZERO.equals(period)) {
       eflect.start();
     }
@@ -74,11 +80,22 @@ public final class EflectCalmnessMonitor {
 
   /** Stops any running collectors. */
   public void stop() {
+    time[1] = Instant.now();
+    energy[1] = Rapl.getInstance().getEnergyStats();
     if (eflect != null) {
       eflect.stop();
     }
     freqMonitor.stop();
+    double consumed = 0;
+    for (int domain = 0; domain < Rapl.getInstance().getSocketCount(); domain++) {
+      for (int component = 0; component < 3; component++) {
+        consumed = energy[1][domain][component] - energy[0][domain][component];
+      }
+    }
+
     logger.info("stopped eflect");
+    logger.info("ran in " + Duration.between(time[0], time[1]).toString());
+    logger.info("consumed " + consumed + "J");
   }
 
   // TODO(timur): all of these dump methods need to be updated when we change the footprint.
