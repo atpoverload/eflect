@@ -17,6 +17,7 @@ public abstract class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint
   protected Eflect(
       Collection<Supplier<?>> sources,
       int domainCount,
+      int componentCount,
       double wrapAroundEnergy,
       IntUnaryOperator domainConversion,
       ScheduledExecutorService executor,
@@ -28,6 +29,7 @@ public abstract class Eflect extends FixedPeriodClerk<Collection<EnergyFootprint
                 () ->
                     new EnergyAccountant(
                         domainCount,
+                        componentCount,
                         wrapAroundEnergy,
                         new JiffiesAccountant(domainCount, domainConversion)))),
         executor,

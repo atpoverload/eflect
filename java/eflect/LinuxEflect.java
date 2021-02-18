@@ -20,19 +20,29 @@ import one.profiler.Events;
 /** A Clerk that estimates the energy consumed by an application on an intel linux system. */
 public final class LinuxEflect extends Eflect {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-  private static final Duration asyncRate = Duration.ofMillis(2);
+  private static final Duration asyncPeriod =
+      Duration.ofMillis(Integer.parseInt(System.getProperty("eflect.async.period", "2")));
+  private static final Duration asyncCollectionPeriod =
+      Duration.ofMillis(
+          Integer.parseInt(System.getProperty("eflect.async.collection.period", "500")));
 
   private static boolean asyncRunning = false;
+  private static Instant last = Instant.now();
 
   private static synchronized String readAsyncProfiler() {
-    if (!asyncRunning) {
-      AsyncProfiler.getInstance().start(Events.CPU, asyncRate.getNano());
-      asyncRunning = true;
+    Instant now = Instant.now();
+    if (Duration.between(last, now).toMillis() < asyncCollectionPeriod.toMillis()) {
+      if (!asyncRunning) {
+        AsyncProfiler.getInstance().start(Events.CPU, asyncPeriod.getNano());
+        asyncRunning = true;
+      }
+      AsyncProfiler.getInstance().stop();
+      String traces = AsyncProfiler.getInstance().dumpRecords();
+      AsyncProfiler.getInstance().resume(Events.CPU, asyncPeriod.getNano());
+      last = now;
+      return traces;
     }
-    AsyncProfiler.getInstance().stop();
-    String traces = AsyncProfiler.getInstance().dumpRecords();
-    AsyncProfiler.getInstance().resume(Events.CPU, asyncRate.getNano());
-    return traces;
+    return "0,-1,dummy\n";
   }
 
   private static Collection<Supplier<?>> getSources() {
@@ -47,6 +57,7 @@ public final class LinuxEflect extends Eflect {
     super(
         getSources(),
         Rapl.getInstance().getSocketCount(),
+        3, // TODO(timur): how do we get the real value properly?
         Rapl.getInstance().getWrapAroundEnergy(),
         cpu -> cpu / (CPU_COUNT / Rapl.getInstance().getSocketCount()),
         executor,

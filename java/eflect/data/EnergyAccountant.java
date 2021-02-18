@@ -10,6 +10,7 @@ import java.util.Collection;
 // TODO(timur): add(), account(), and discard() have races with each other
 public final class EnergyAccountant implements Accountant<Collection<EnergyFootprint>> {
   private final int domainCount;
+  private final int componentCount;
   private final double wrapAround;
   private final Accountant<Collection<ThreadActivity>> activityAccountant;
   private final double[][] energyMin;
@@ -20,14 +21,17 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
 
   public EnergyAccountant(
       int domainCount,
+      int componentCount,
       double wrapAround,
       Accountant<Collection<ThreadActivity>> activityAccountant) {
     this.domainCount = domainCount;
+    this.componentCount = componentCount;
     this.wrapAround = wrapAround;
     this.activityAccountant = activityAccountant;
     // TODO(timur): this may change if we come up with a formal definition for domains + components
-    energyMin = new double[domainCount][1];
-    energyMax = new double[domainCount][1];
+    // TODO(timur): are we missing energy because it gets globbed?
+    energyMin = new double[domainCount][componentCount];
+    energyMax = new double[domainCount][componentCount];
     for (int domain = 0; domain < domainCount; domain++) {
       Arrays.fill(energyMin[domain], -1);
       Arrays.fill(energyMax[domain], -1);
@@ -80,10 +84,12 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
 
     // check the energy
     for (int domain = 0; domain < domainCount; domain++) {
-      if (energyMax[domain][0] < 0
-          || energyMin[domain][0] < 0
-          || energyMax[domain][0] == energyMin[domain][0]) {
-        return Accountant.Result.UNACCOUNTABLE;
+      for (int component = 0; component < componentCount; component++) {
+        if (energyMax[domain][component] < 0
+            || energyMin[domain][component] < 0
+            || energyMax[domain][component] == energyMin[domain][component]) {
+          return Accountant.Result.UNACCOUNTABLE;
+        }
       }
     }
 
@@ -98,9 +104,12 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
       ArrayList<EnergyFootprint> footprints = new ArrayList<>();
       double[] energy = new double[domainCount];
       for (int domain = 0; domain < domainCount; domain++) {
-        energy[domain] = energyMax[domain][0] - energyMin[domain][0];
-        if (energy[domain] < 0) {
-          energy[domain] += wrapAround;
+        for (int component = 0; component < componentCount; component++) {
+          double componentEnergy = energyMax[domain][component] - energyMin[domain][component];
+          if (energy[domain] < 0) {
+            componentEnergy += wrapAround;
+          }
+          energy[domain] += componentEnergy;
         }
       }
       for (ThreadActivity thread : activityAccountant.process()) {
@@ -126,7 +135,9 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
   public void discardStart() {
     start = end;
     for (int domain = 0; domain < domainCount; domain++) {
-      energyMin[domain][0] = energyMax[domain][0];
+      for (int component = 0; component < componentCount; component++) {
+        energyMin[domain][component] = energyMax[domain][component];
+      }
     }
     activityAccountant.discardStart();
   }
@@ -137,25 +148,27 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
   public void discardEnd() {
     end = start;
     for (int domain = 0; domain < domainCount; domain++) {
-      energyMax[domain][0] = energyMin[domain][0];
+      for (int component = 0; component < componentCount; component++) {
+        energyMax[domain][component] = energyMin[domain][component];
+      }
     }
     activityAccountant.discardEnd();
   }
 
   private void addEnergy(double[][] energy) {
     for (int domain = 0; domain < domainCount; domain++) {
-      double domainEnergy = 0;
-      for (double e : energy[domain]) {
-        domainEnergy += e;
-      }
-      if (domainEnergy < 0) {
-        continue;
-      }
-      if (energyMin[domain][0] < 0 || domainEnergy < energyMin[domain][0]) {
-        energyMin[domain][0] = domainEnergy;
-      }
-      if (domainEnergy > energyMax[domain][0]) {
-        energyMax[domain][0] = domainEnergy;
+      for (int component = 0; component < componentCount; component++) {
+        // TODO(timur): are we missing energy because it gets globbed?
+        double componentEnergy = energy[domain][component];
+        if (componentEnergy < 0) {
+          continue;
+        }
+        if (energyMin[domain][component] < 0 || componentEnergy < energyMin[domain][component]) {
+          energyMin[domain][component] = componentEnergy;
+        }
+        if (componentEnergy > energyMax[domain][component]) {
+          energyMax[domain][component] = componentEnergy;
+        }
       }
     }
   }

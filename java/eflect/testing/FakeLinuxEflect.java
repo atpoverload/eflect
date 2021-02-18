@@ -70,7 +70,7 @@ public final class FakeLinuxEflect extends Eflect {
   }
 
   public FakeLinuxEflect(ScheduledExecutorService executor, Duration period) {
-    super(getSources(), 1, 0, cpu -> 0, executor, period);
+    super(getSources(), 1, 1, 0, cpu -> 0, executor, period);
   }
 
   public static void main(String[] args) throws Exception {

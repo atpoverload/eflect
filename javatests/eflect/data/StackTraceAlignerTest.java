@@ -2,6 +2,7 @@ package eflect.data;
 
 import static org.junit.Assert.assertEquals;
 
+import eflect.data.Accountant.Result;
 import eflect.testing.data.FakeAccountant;
 import java.time.Instant;
 import java.util.List;
@@ -36,6 +37,7 @@ public class StackTraceAlignerTest {
             .setEnergy(1)
             .build();
     accountant.setData(List.of(expected));
+    accountant.setResult(Result.ACCOUNTED);
     aligner.add(new StackTraceSample(Instant.EPOCH, 1, "FAKE-TRACE"));
     EnergyFootprint actual = ((List<EnergyFootprint>) aligner.process()).get(0);
     assertEquals(expected.id, actual.id);

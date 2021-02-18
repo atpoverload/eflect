@@ -18,7 +18,7 @@ public class EnergyAccountantTest {
   @Before
   public void setUp() {
     activityAccountant = new FakeAccountant<>();
-    accountant = new EnergyAccountant(1, 0, activityAccountant);
+    accountant = new EnergyAccountant(1, 1, 0, activityAccountant);
     activityAccountant.setResult(Result.UNACCOUNTABLE);
   }
 
