@@ -71,14 +71,15 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
     }
 
     // check the cpu jiffies
-    // TODO(timur): synchronize the cpu jiffies with add()
     long[] domainJiffies = new long[domainCount];
-    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-      if (statMin[cpu] < 0 || statMax[cpu] < 0) {
-        return Accountant.Result.UNACCOUNTABLE;
+    synchronized (statMin) {
+      for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+        if (statMin[cpu] < 0 || statMax[cpu] < 0) {
+          return Accountant.Result.UNACCOUNTABLE;
+        }
+        int domain = domainConversion.applyAsInt(cpu);
+        domainJiffies[domain] += statMax[cpu] - statMin[cpu];
       }
-      int domain = domainConversion.applyAsInt(cpu);
-      domainJiffies[domain] += statMax[cpu] - statMin[cpu];
     }
     for (int domain = 0; domain < domainCount; domain++) {
       if (domainJiffies[domain] == 0) {
@@ -87,24 +88,24 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
     }
 
     // check the task jiffies
-    // TODO(timur): synchronize the task jiffies with add()
     long[] applicationJiffies = new long[domainCount];
     ArrayList<ProcThreadActivityBuilder> tasks = new ArrayList<>();
-    for (long id : taskStatMin.keySet()) {
-      TaskStat task = taskStatMin.get(id);
-      long jiffies = taskStatMax.get(id).jiffies - task.jiffies;
-      int domain = domainConversion.applyAsInt(task.cpu);
-      if (jiffies > 0) {
-        applicationJiffies[domain] += jiffies;
-        tasks.add(
-            new ProcThreadActivityBuilder()
-                .setId(task.id)
-                .setName(task.name)
-                .setDomain(domain)
-                .setTaskJiffies(jiffies));
+    synchronized (taskStatMin) {
+      for (long id : taskStatMin.keySet()) {
+        TaskStat task = taskStatMin.get(id);
+        long jiffies = taskStatMax.get(id).jiffies - task.jiffies;
+        int domain = domainConversion.applyAsInt(task.cpu);
+        if (jiffies > 0) {
+          applicationJiffies[domain] += jiffies;
+          tasks.add(
+              new ProcThreadActivityBuilder()
+                  .setId(task.id)
+                  .setName(task.name)
+                  .setDomain(domain)
+                  .setTaskJiffies(jiffies));
+        }
       }
     }
-
     for (int domain = 0; domain < domainCount; domain++) {
       if (applicationJiffies[domain] == 0) {
         return Accountant.Result.UNACCOUNTABLE;
@@ -134,50 +135,60 @@ public final class JiffiesAccountant implements Accountant<Collection<ThreadActi
   }
 
   /** Sets the min values to the max values. */
-  // TODO(timur): synchronize with add
   @Override
   public void discardStart() {
-    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-      statMin[cpu] = statMax[cpu];
+    synchronized (statMin) {
+      for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+        statMin[cpu] = statMax[cpu];
+      }
     }
-    taskStatMin.clear();
-    taskStatMin.putAll(taskStatMax);
+    synchronized (taskStatMin) {
+      taskStatMin.clear();
+      taskStatMin.putAll(taskStatMax);
+    }
     data = null;
   }
 
   /** Sets the max values to the min values. */
-  // TODO(timur): synchronize with add
   @Override
   public void discardEnd() {
-    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-      statMax[cpu] = statMin[cpu];
+    synchronized (statMin) {
+      for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+        statMax[cpu] = statMin[cpu];
+      }
     }
-    taskStatMax.clear();
-    taskStatMax.putAll(taskStatMin);
+    synchronized (taskStatMin) {
+      taskStatMax.clear();
+      taskStatMax.putAll(taskStatMin);
+    }
     data = null;
   }
 
-  private synchronized void addProcStat(long[] jiffies) {
-    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-      if (jiffies[cpu] == -1) {
-        continue;
-      }
-      if (statMin[cpu] == -1 || jiffies[cpu] < statMin[cpu]) {
-        statMin[cpu] = jiffies[cpu];
-      }
-      if (jiffies[cpu] > statMax[cpu]) {
-        statMax[cpu] = jiffies[cpu];
+  private void addProcStat(long[] jiffies) {
+    synchronized (statMin) {
+      for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+        if (jiffies[cpu] == -1) {
+          continue;
+        }
+        if (statMin[cpu] == -1 || jiffies[cpu] < statMin[cpu]) {
+          statMin[cpu] = jiffies[cpu];
+        }
+        if (jiffies[cpu] > statMax[cpu]) {
+          statMax[cpu] = jiffies[cpu];
+        }
       }
     }
   }
 
-  private synchronized void addProcTask(Iterable<TaskStat> stats) {
-    for (TaskStat stat : stats) {
-      if (!taskStatMin.containsKey(stat.id) || stat.jiffies < taskStatMin.get(stat.id).jiffies) {
-        taskStatMin.put(stat.id, stat);
-      }
-      if (!taskStatMax.containsKey(stat.id) || stat.jiffies > taskStatMax.get(stat.id).jiffies) {
-        taskStatMax.put(stat.id, stat);
+  private void addProcTask(Iterable<TaskStat> stats) {
+    synchronized (taskStatMin) {
+      for (TaskStat stat : stats) {
+        if (!taskStatMin.containsKey(stat.id) || stat.jiffies < taskStatMin.get(stat.id).jiffies) {
+          taskStatMin.put(stat.id, stat);
+        }
+        if (!taskStatMax.containsKey(stat.id) || stat.jiffies > taskStatMax.get(stat.id).jiffies) {
+          taskStatMax.put(stat.id, stat);
+        }
       }
     }
   }

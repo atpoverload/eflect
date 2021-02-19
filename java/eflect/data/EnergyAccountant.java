@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /** Processor that merges samples into task energy footprints. */
-// TODO(timur): add(), account(), and discard() have races with each other
 public final class EnergyAccountant implements Accountant<Collection<EnergyFootprint>> {
   private final int domainCount;
   private final int componentCount;
@@ -29,7 +28,6 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
     this.wrapAround = wrapAround;
     this.activityAccountant = activityAccountant;
     // TODO(timur): this may change if we come up with a formal definition for domains + components
-    // TODO(timur): are we missing energy because it gets globbed?
     energyMin = new double[domainCount][componentCount];
     energyMax = new double[domainCount][componentCount];
     for (int domain = 0; domain < domainCount; domain++) {
@@ -83,12 +81,12 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
     }
 
     // check the energy
-    for (int domain = 0; domain < domainCount; domain++) {
-      for (int component = 0; component < componentCount; component++) {
-        if (energyMax[domain][component] < 0
-            || energyMin[domain][component] < 0
-            || energyMax[domain][component] == energyMin[domain][component]) {
-          return Accountant.Result.UNACCOUNTABLE;
+    synchronized (energyMin) {
+      for (int domain = 0; domain < domainCount; domain++) {
+        for (int component = 0; component < componentCount; component++) {
+          if (energyMax[domain][component] < 0 || energyMin[domain][component] < 0) {
+            return Accountant.Result.UNACCOUNTABLE;
+          }
         }
       }
     }
@@ -103,13 +101,15 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
     if (account() != Accountant.Result.UNACCOUNTABLE) {
       ArrayList<EnergyFootprint> footprints = new ArrayList<>();
       double[] energy = new double[domainCount];
-      for (int domain = 0; domain < domainCount; domain++) {
-        for (int component = 0; component < componentCount; component++) {
-          double componentEnergy = energyMax[domain][component] - energyMin[domain][component];
-          if (energy[domain] < 0) {
-            componentEnergy += wrapAround;
+      synchronized (energyMin) {
+        for (int domain = 0; domain < domainCount; domain++) {
+          for (int component = 0; component < componentCount; component++) {
+            double componentEnergy = energyMax[domain][component] - energyMin[domain][component];
+            if (energy[domain] < 0) {
+              componentEnergy += wrapAround;
+            }
+            energy[domain] += componentEnergy;
           }
-          energy[domain] += componentEnergy;
         }
       }
       for (ThreadActivity thread : activityAccountant.process()) {
@@ -130,26 +130,28 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
   }
 
   /** Sets the min values to the max values. */
-  // TODO(timur): synchronize with add
   @Override
   public void discardStart() {
     start = end;
-    for (int domain = 0; domain < domainCount; domain++) {
-      for (int component = 0; component < componentCount; component++) {
-        energyMin[domain][component] = energyMax[domain][component];
+    synchronized (energyMin) {
+      for (int domain = 0; domain < domainCount; domain++) {
+        for (int component = 0; component < componentCount; component++) {
+          energyMin[domain][component] = energyMax[domain][component];
+        }
       }
     }
     activityAccountant.discardStart();
   }
 
   /** Sets the max values to the min values. */
-  // TODO(timur): synchronize with add
   @Override
   public void discardEnd() {
     end = start;
-    for (int domain = 0; domain < domainCount; domain++) {
-      for (int component = 0; component < componentCount; component++) {
-        energyMax[domain][component] = energyMin[domain][component];
+    synchronized (energyMin) {
+      for (int domain = 0; domain < domainCount; domain++) {
+        for (int component = 0; component < componentCount; component++) {
+          energyMax[domain][component] = energyMin[domain][component];
+        }
       }
     }
     activityAccountant.discardEnd();
@@ -158,16 +160,17 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
   private void addEnergy(double[][] energy) {
     for (int domain = 0; domain < domainCount; domain++) {
       for (int component = 0; component < componentCount; component++) {
-        // TODO(timur): are we missing energy because it gets globbed?
         double componentEnergy = energy[domain][component];
         if (componentEnergy < 0) {
           continue;
         }
-        if (energyMin[domain][component] < 0 || componentEnergy < energyMin[domain][component]) {
-          energyMin[domain][component] = componentEnergy;
-        }
-        if (componentEnergy > energyMax[domain][component]) {
-          energyMax[domain][component] = componentEnergy;
+        synchronized (energyMin) {
+          if (energyMin[domain][component] < 0 || componentEnergy < energyMin[domain][component]) {
+            energyMin[domain][component] = componentEnergy;
+          }
+          if (componentEnergy > energyMax[domain][component]) {
+            energyMax[domain][component] = componentEnergy;
+          }
         }
       }
     }

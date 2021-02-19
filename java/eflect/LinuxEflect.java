@@ -31,7 +31,7 @@ public final class LinuxEflect extends Eflect {
 
   private static synchronized String readAsyncProfiler() {
     Instant now = Instant.now();
-    if (Duration.between(last, now).toMillis() < asyncCollectionPeriod.toMillis()) {
+    if (Duration.between(last, now).toMillis() > asyncCollectionPeriod.toMillis()) {
       if (!asyncRunning) {
         AsyncProfiler.getInstance().start(Events.CPU, asyncPeriod.getNano());
         asyncRunning = true;
