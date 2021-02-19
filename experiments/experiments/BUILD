@@ -30,11 +30,29 @@ java_binary(
 )
 
 java_binary(
-  name = "label_image",
+  name = "tensorflow",
   visibility = ["//visibility:public"],
-  main_class = "eflect.experiments.LabelImage",
+  main_class = "eflect.experiments.TensorflowDriver",
   srcs = [
-    "LabelImage.java",
+    "TensorflowDriver.java",
+  ],
+  deps = [
+    ":monitor",
+    "//experiments/util",
+    "@tensorflow",
+  ],
+  jvm_flags = [
+    "-Deflect.output=/home/timur/projects/data/tensorflow",
+    "-Dtf.lib=/home/timur/projects/eflect/experiments/tensorflow/bazel-bin/tensorflow/java/libtensorflow_jni.so",
+  ]
+)
+
+java_binary(
+  name = "tensorflow_hub",
+  visibility = ["//visibility:public"],
+  main_class = "eflect.experiments.TensorflowSavedModelDriver",
+  srcs = [
+    "TensorflowSavedModelDriver.java",
   ],
   deps = [
     ":monitor",

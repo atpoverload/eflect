@@ -1,6 +1,12 @@
 package eflect.experiments.util;
 
-static class GraphBuilder {
+import org.tensorflow.DataType;
+import org.tensorflow.Graph;
+import org.tensorflow.Output;
+import org.tensorflow.Tensor;
+import org.tensorflow.types.UInt8;
+
+class GraphBuilder {
   private final Graph g;
 
   GraphBuilder(Graph g) {

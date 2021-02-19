@@ -6,6 +6,7 @@ import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 import eflect.CpuFreqMonitor;
 import eflect.LinuxEflect;
+import eflect.data.EnergyFootprint;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
@@ -44,6 +45,8 @@ public final class EflectCalmnessMonitor {
   private ScheduledExecutorService executor;
   private LinuxEflect eflect;
   private CpuFreqMonitor freqMonitor;
+  private Collection<EnergyFootprint> footprints;
+  private Collection<EnergyFootprint> frequencies;
 
   // TODO(timur): i'm not sure how much this class wrapper needs to do
   private EflectCalmnessMonitor() {
@@ -65,17 +68,18 @@ public final class EflectCalmnessMonitor {
     Duration period = Duration.ofMillis(periodMillis);
     if (!Duration.ZERO.equals(period)) {
       eflect = new LinuxEflect(executor, period);
+      footprints = null;
     } else {
       eflect = null;
     }
     freqMonitor = new CpuFreqMonitor(executor, Duration.ofMillis(500));
 
-    time[0] = Instant.now();
-    energy[0] = Rapl.getInstance().getEnergyStats();
     if (!Duration.ZERO.equals(period)) {
       eflect.start();
     }
     freqMonitor.start();
+    time[0] = Instant.now();
+    energy[0] = Rapl.getInstance().getEnergyStats();
   }
 
   /** Stops any running collectors. */
@@ -86,16 +90,25 @@ public final class EflectCalmnessMonitor {
       eflect.stop();
     }
     freqMonitor.stop();
+
+    logger.info("stopped eflect");
+    logger.info("ran in " + Duration.between(time[0], time[1]).toString());
+
     double consumed = 0;
     for (int domain = 0; domain < Rapl.getInstance().getSocketCount(); domain++) {
       for (int component = 0; component < 3; component++) {
         consumed = energy[1][domain][component] - energy[0][domain][component];
       }
     }
+    logger.info("system consumed " + consumed + "J");
 
-    logger.info("stopped eflect");
-    logger.info("ran in " + Duration.between(time[0], time[1]).toString());
-    logger.info("consumed " + consumed + "J");
+    if (eflect != null) {
+      footprints = eflect.read();
+      eflect = null;
+      logger.info("app consumed " + Double.toString(sum(footprints)) + "J");
+    } else {
+      footprints = null;
+    }
   }
 
   // TODO(timur): all of these dump methods need to be updated when we change the footprint.
@@ -105,12 +118,12 @@ public final class EflectCalmnessMonitor {
     if (!dataDirectory.exists()) {
       dataDirectory.mkdirs();
     }
-    if (eflect != null) {
+    if (footprints != null) {
       writeCsv(
           dataDirectory.getPath(),
           "footprint.csv",
           "id,name,start,end,energy,trace", // header
-          eflect.read()); // data
+          footprints.read()); // data
     }
 
     String[] cpus = new String[CPU_COUNT];
@@ -129,12 +142,12 @@ public final class EflectCalmnessMonitor {
     if (!dataDirectory.exists()) {
       dataDirectory.mkdirs();
     }
-    if (eflect != null) {
+    if (footprints != null) {
       writeCsv(
           dataDirectory.getPath(),
           "footprint-" + tag + ".csv",
           "id,name,start,end,energy,trace", // header
-          eflect.read()); // data
+          footprints); // data
     }
 
     String[] cpus = new String[CPU_COUNT];
@@ -152,5 +165,13 @@ public final class EflectCalmnessMonitor {
   public void shutdown() {
     executor.shutdown();
     executor = null;
+  }
+
+  private static double sum(Iterable<EnergyFootprint> footprints) {
+    double energy = 0;
+    for (EnergyFootprint footprint : footprints) {
+      energy += footprint.energy;
+    }
+    return energy;
   }
 }

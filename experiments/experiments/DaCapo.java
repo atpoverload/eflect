@@ -1,6 +1,5 @@
 package eflect.experiments;
 
-import java.time.Duration;
 import org.dacapo.harness.Callback;
 import org.dacapo.harness.CommandLineArgs;
 
