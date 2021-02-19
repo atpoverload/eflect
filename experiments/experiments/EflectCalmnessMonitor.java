@@ -98,7 +98,11 @@ public final class EflectCalmnessMonitor {
     double consumed = 0;
     for (int domain = 0; domain < Rapl.getInstance().getSocketCount(); domain++) {
       for (int component = 0; component < 3; component++) {
-        consumed = energy[1][domain][component] - energy[0][domain][component];
+        double componentEnergy = energy[1][domain][component] - energy[0][domain][component];
+        if (componentEnergy < 0) {
+          componentEnergy += Rapl.getInstance().getWrapAroundEnergy();
+        }
+        consumed += componentEnergy;
       }
     }
     logger.info("system consumed " + consumed + "J");
