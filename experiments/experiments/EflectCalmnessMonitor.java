@@ -10,6 +10,7 @@ import eflect.data.EnergyFootprint;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -123,7 +124,7 @@ public final class EflectCalmnessMonitor {
           dataDirectory.getPath(),
           "footprint.csv",
           "id,name,start,end,energy,trace", // header
-          footprints.read()); // data
+          footprints); // data
     }
 
     String[] cpus = new String[CPU_COUNT];

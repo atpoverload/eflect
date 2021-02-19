@@ -9,7 +9,7 @@ import org.tensorflow.Tensor;
 
 /** Runs a tensorflow graph from a SavedModel on data. */
 public class TensorflowSavedModelDriver {
-  private static checkArgs() {
+  private static void checkArgs() {
     if (args.length < 1) {
       System.out.println("Expected 1 args; got " + (args.length - 1) + ": no path to SavedModel");
       System.exit(1);
