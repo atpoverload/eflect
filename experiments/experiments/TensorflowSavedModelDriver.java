@@ -9,7 +9,7 @@ import org.tensorflow.Tensor;
 
 /** Runs a tensorflow graph from a SavedModel on data. */
 public class TensorflowSavedModelDriver {
-  private static void checkArgs() {
+  private static void checkArgs(String[] args) {
     if (args.length < 1) {
       System.out.println("Expected 1 args; got " + (args.length - 1) + ": no path to SavedModel");
       System.exit(1);
@@ -17,7 +17,7 @@ public class TensorflowSavedModelDriver {
   }
 
   public static void main(String[] args) throws Exception {
-    checkArgs();
+    checkArgs(args);
     // hack to load the stripped .so
     System.load(System.getProperty("tf.lib"));
     // try (Tensor<?> data = normalizeImage(readBytes(Paths.get(args[1]))); ) {

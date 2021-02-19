@@ -11,7 +11,7 @@ import org.tensorflow.Tensor;
 
 /** Runs a frozen tensorflow graph on image data. */
 public class TensorflowDriver {
-  private static checkArgs() {
+  private static checkArgs(String[] args) {
     if (args.length < 1) {
       System.out.println("Expected 2 args; got " + (args.length - 1) + ": no model graph provided");
       System.exit(1);
@@ -23,7 +23,7 @@ public class TensorflowDriver {
   }
 
   public static void main(String[] args) {
-    checkArgs();
+    checkArgs(args);
     // hack to load the stripped .so
     System.load(System.getProperty("tf.lib"));
     try (Tensor<?> data = normalizeImage(readBytes(Paths.get(args[1]))); ) {
