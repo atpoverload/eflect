@@ -39,6 +39,7 @@ java_binary(
   deps = [
     ":monitor",
     "//experiments/util",
+    "@eflect//java/eflect/util",
     "@tensorflow",
   ],
   jvm_flags = [
@@ -57,6 +58,7 @@ java_binary(
   deps = [
     ":monitor",
     "//experiments/util",
+    "@eflect//java/eflect/util",
     "@tensorflow",
   ],
   jvm_flags = [
