@@ -120,7 +120,9 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
                 .setName(thread.name)
                 .setStart(start)
                 .setEnd(end)
+                .setDomain(thread.domain)
                 .setEnergy(taskEnergy)
+                .setTotalEnergy(energy[thread.domain])
                 .build());
       }
       return footprints;

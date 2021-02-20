@@ -127,7 +127,7 @@ public final class EflectCalmnessMonitor {
       writeCsv(
           dataDirectory.getPath(),
           "footprint.csv",
-          "id,name,start,end,energy,trace", // header
+          "id,name,start,end,domain,app_energy,total_energy,trace", // header
           footprints); // data
     }
 
