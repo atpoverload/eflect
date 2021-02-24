@@ -5,13 +5,14 @@ import static eflect.experiments.util.TensorFlowUtil.readBytes;
 import static eflect.util.LoggerUtil.getLogger;
 
 import java.nio.file.Paths;
+import java.util.List;
 import org.tensorflow.Graph;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 
 /** Runs a frozen tensorflow graph on image data. */
 public class TensorflowDriver {
-  private static checkArgs(String[] args) {
+  private static void checkArgs(String[] args) {
     if (args.length < 1) {
       System.out.println("Expected 2 args; got " + (args.length - 1) + ": no model graph provided");
       System.exit(1);
@@ -36,19 +37,19 @@ public class TensorflowDriver {
       g.importGraphDef(graphDef);
       EflectCalmnessMonitor.getInstance().start(41);
       for (int i = 0; i < 250; i++) {
-        try (Session s = new Session(g);
-            Tensor<?> result =
-                s.runner()
-                    .feed("input", data)
-                    .fetch("output")
-                    // .fetch("InceptionV3/Predictions/Reshape/shape")
-                    .run()) {}
-        if ((i + 1) % 25 == 0) {
-          getLogger().info("completed iter " + Integer.toString(i + 1));
+        try (Session s = new Session(g)) {
+          List<Tensor<?>> result =
+              s.runner()
+                  .feed("input", data)
+                  .fetch("InceptionV3/Predictions/Reshape/shape")
+                  .run();
+          if ((i + 1) % 25 == 0) {
+            getLogger().info("completed iter " + Integer.toString(i + 1));
+          }
         }
       }
       EflectCalmnessMonitor.getInstance().stop();
-      EflectCalmnessMonitor.getInstance().dump("inception");
+      EflectCalmnessMonitor.getInstance().dump("inception_v3");
     }
   }
 

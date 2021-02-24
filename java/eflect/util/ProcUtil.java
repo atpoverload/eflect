@@ -18,10 +18,14 @@ public class ProcUtil {
     ArrayList<String> stats = new ArrayList<String>();
     File tasks = new File(String.join(File.separator, "/proc", Long.toString(PID), "task"));
     for (File task : tasks.listFiles()) {
+      File statFile = new File(task, "stat");
+      if (!statFile.exists()) {
+        continue;
+      }
       try {
-        stats.add(Files.readString(Path.of(task.getPath(), "stat")));
+        stats.add(Files.readString(Path.of(statFile.getPath())));
       } catch (Exception e) {
-        logger.info("unable to read task " + new File(task, "stat"));
+        logger.info("unable to read task " + statFile.getName());
       }
     }
     return stats;

@@ -34,11 +34,10 @@ public final class LoggerUtil {
   }
 
   /** Sets up the logger, if necessary, and returns it. */
-  // TODO(timurbey): there should be an injection to customize the logger
   public static synchronized Logger getLogger() {
     if (!setup) {
       try {
-        // TODO(timurbey): add a file handler for transactions
+        // TODO(timurbey): add a file handler
         ConsoleHandler handler = new ConsoleHandler();
         handler.setFormatter(formatter);
 

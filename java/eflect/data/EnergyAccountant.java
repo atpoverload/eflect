@@ -70,7 +70,6 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
    *
    * <p>Returns the result of the {@link ActivityAccountant} otherwise.
    */
-  // TODO(timur): synchronize with add
   @Override
   public Accountant.Result account() {
     // check the timestamps
@@ -95,7 +94,6 @@ public final class EnergyAccountant implements Accountant<Collection<EnergyFootp
   }
 
   /** Returns the data if it's accountable. Otherwise, return an empty list. */
-  // TODO(timur): synchronize with add
   @Override
   public Collection<EnergyFootprint> process() {
     if (account() != Accountant.Result.UNACCOUNTABLE) {
