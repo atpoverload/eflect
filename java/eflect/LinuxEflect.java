@@ -4,7 +4,7 @@ import static eflect.util.ProcUtil.readProcStat;
 import static eflect.util.ProcUtil.readTaskStats;
 
 import eflect.data.EnergySample;
-import eflect.data.async.AsyncProfilerSample;
+import eflect.data.jiffies.JiffiesAccountant;
 import eflect.data.jiffies.ProcStatSample;
 import eflect.data.jiffies.ProcTaskSample;
 import java.time.Duration;
@@ -16,6 +16,8 @@ import java.util.function.Supplier;
 import jrapl.Rapl;
 import one.profiler.AsyncProfiler;
 import one.profiler.Events;
+
+// import eflect.data.async.AsyncProfilerSample;
 
 /** A Clerk that estimates the energy consumed by an application on an intel linux system. */
 public final class LinuxEflect extends Eflect {
@@ -49,8 +51,9 @@ public final class LinuxEflect extends Eflect {
     Supplier<?> stat = () -> new ProcStatSample(Instant.now(), readProcStat());
     Supplier<?> task = () -> new ProcTaskSample(Instant.now(), readTaskStats());
     Supplier<?> rapl = () -> new EnergySample(Instant.now(), Rapl.getInstance().getEnergyStats());
-    Supplier<?> async = () -> new AsyncProfilerSample(Instant.now(), readAsyncProfiler());
-    return List.of(stat, task, rapl, async);
+    return List.of(stat, task, rapl);
+    // Supplier<?> async = () -> new AsyncProfilerSample(Instant.now(), readAsyncProfiler());
+    // return List.of(stat, task, rapl, async);
   }
 
   public LinuxEflect(ScheduledExecutorService executor, Duration period) {
@@ -59,7 +62,10 @@ public final class LinuxEflect extends Eflect {
         Rapl.getInstance().getSocketCount(),
         3, // TODO(timur): how do we get the real value properly?
         Rapl.getInstance().getWrapAroundEnergy(),
-        cpu -> cpu / (CPU_COUNT / Rapl.getInstance().getSocketCount()),
+        new JiffiesAccountant(
+            Rapl.getInstance().getSocketCount(),
+            cpu -> cpu / (CPU_COUNT / Rapl.getInstance().getSocketCount())),
+        100,
         executor,
         period);
   }

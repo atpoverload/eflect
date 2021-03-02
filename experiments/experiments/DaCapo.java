@@ -16,7 +16,7 @@ public final class DaCapo extends Callback {
   @Override
   public void start(String benchmark) {
     this.benchmark = benchmark;
-    EflectCalmnessMonitor.getInstance().start(41);
+    EflectCalmnessMonitor.getInstance().start();
     super.start(benchmark);
   }
 
@@ -24,6 +24,15 @@ public final class DaCapo extends Callback {
   public void stop(long duration) {
     super.stop(duration);
     EflectCalmnessMonitor.getInstance().stop();
-    EflectCalmnessMonitor.getInstance().dump(benchmark, Integer.toString(iteration++));
+    EflectCalmnessMonitor.getInstance().dump(Integer.toString(iteration++));
+  }
+
+  @Override
+  public boolean runAgain() {
+    boolean doRun = super.runAgain();
+    if (!doRun) {
+      EflectCalmnessMonitor.getInstance().shutdown();
+    }
+    return doRun;
   }
 }

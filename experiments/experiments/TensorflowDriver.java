@@ -35,21 +35,21 @@ public class TensorflowDriver {
   private static void executeGraph(byte[] graphDef, Tensor<?> data) {
     try (Graph g = new Graph()) {
       g.importGraphDef(graphDef);
+      int iters = 10;
+      int batches = 250;
       EflectCalmnessMonitor.getInstance().start(41);
-      for (int i = 0; i < 250; i++) {
+      for (int i = 0; i < iters * batches; i++) {
         try (Session s = new Session(g)) {
           List<Tensor<?>> result =
-              s.runner()
-                  .feed("input", data)
-                  .fetch("InceptionV3/Predictions/Reshape/shape")
-                  .run();
-          if ((i + 1) % 25 == 0) {
-            getLogger().info("completed iter " + Integer.toString(i + 1));
-          }
+              s.runner().feed("input", data).fetch("InceptionV3/Predictions/Reshape/shape").run();
+        }
+        if ((i + 1) % (batches) == 0) {
+          getLogger().info("completed iteration " + Integer.toString(batches / i));
+          EflectCalmnessMonitor.getInstance().stop();
+          EflectCalmnessMonitor.getInstance().dump(Integer.toString(batches / i));
+          EflectCalmnessMonitor.getInstance().start(41);
         }
       }
-      EflectCalmnessMonitor.getInstance().stop();
-      EflectCalmnessMonitor.getInstance().dump("inception_v3");
     }
   }
 

@@ -25,7 +25,7 @@ public class ProcUtil {
       try {
         stats.add(Files.readString(Path.of(statFile.getPath())));
       } catch (Exception e) {
-        logger.info("unable to read task " + statFile.getName());
+        logger.info("unable to read task " + statFile);
       }
     }
     return stats;

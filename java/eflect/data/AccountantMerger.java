@@ -11,9 +11,17 @@ import java.util.function.Supplier;
 public final class AccountantMerger<O> implements Processor<Sample, Collection<O>> {
   private final TreeMap<Instant, Accountant<Collection<O>>> data = new TreeMap<>();
   private final Supplier<Accountant<Collection<O>>> accountantFactory;
+  private final int mergeAttempts;
 
   public AccountantMerger(Supplier<Accountant<Collection<O>>> accountantFactory) {
     this.accountantFactory = accountantFactory;
+    this.mergeAttempts = Integer.MAX_VALUE;
+  }
+
+  public AccountantMerger(
+      Supplier<Accountant<Collection<O>>> accountantFactory, int mergeAttempts) {
+    this.accountantFactory = accountantFactory;
+    this.mergeAttempts = mergeAttempts;
   }
 
   /** Put the sample into a timestamped bucket. */
@@ -35,6 +43,7 @@ public final class AccountantMerger<O> implements Processor<Sample, Collection<O
   public final Collection<O> process() {
     ArrayList<O> results = new ArrayList<>();
     Accountant<Collection<O>> accountant = null;
+    int attempts = 0;
     synchronized (data) {
       for (Instant timestamp : data.keySet()) {
         if (accountant == null) {
@@ -42,9 +51,13 @@ public final class AccountantMerger<O> implements Processor<Sample, Collection<O
         } else {
           accountant.add(data.get(timestamp));
         }
-        if (accountant.account() == Accountant.Result.ACCOUNTED) {
+        if (accountant.account() == Accountant.Result.ACCOUNTED
+            || (attempts > mergeAttempts
+                && accountant.account() != Accountant.Result.UNACCOUNTABLE)) {
           results.addAll(accountant.process());
           accountant.discardStart(); // we don't need any previous data because it's been accounted
+        } else {
+          attempts++;
         }
       }
       data.clear();

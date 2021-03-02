@@ -70,7 +70,14 @@ public final class EnergyFootprint {
 
   public Builder toBuilder() {
     Builder builder =
-        new Builder().setId(id).setName(name).setStart(start).setEnd(end).setEnergy(energy);
+        new Builder()
+            .setId(id)
+            .setName(name)
+            .setStart(start)
+            .setEnd(end)
+            .setDomain(domain)
+            .setEnergy(energy)
+            .setTotalEnergy(totalEnergy);
     if (!stackTrace.isEmpty()) {
       for (String trace : stackTrace.split("@")) {
         builder.addStackTrace(trace);

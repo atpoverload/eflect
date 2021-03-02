@@ -18,9 +18,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import jrapl.Rapl;
 
+/** A wrapper around {@link LinuxEflect} that also monitors runtime stats and calmness. */
 public final class EflectCalmnessMonitor {
   private static final Logger logger = getLogger();
-  private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
   private static final AtomicInteger counter = new AtomicInteger();
   private static final ThreadFactory threadFactory =
       r -> {
@@ -28,6 +28,9 @@ public final class EflectCalmnessMonitor {
         t.setDaemon(true);
         return t;
       };
+  private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+  private static final String FOOTPRINT_HEADER =
+      "id,name,start,end,domain,app_energy,total_energy,trace";
 
   private static EflectCalmnessMonitor instance;
 
@@ -40,6 +43,7 @@ public final class EflectCalmnessMonitor {
   }
 
   private final String outputPath;
+  private final long periodMillis;
   private final Instant[] time = new Instant[2];
   private final double[][][] energy = new double[2][][];
 
@@ -52,6 +56,7 @@ public final class EflectCalmnessMonitor {
   // TODO(timur): i'm not sure how much this class wrapper needs to do
   private EflectCalmnessMonitor() {
     this.outputPath = System.getProperty("eflect.output", ".");
+    this.periodMillis = Long.parseLong(System.getProperty("eflect.period", "64"));
   }
 
   /**
@@ -61,6 +66,11 @@ public final class EflectCalmnessMonitor {
    *
    * <p>If the period is 0, an eflect will not be created.
    */
+  public void start() {
+    start(periodMillis);
+  }
+
+  /** Starts up eflect if needed. */
   public void start(long periodMillis) {
     logger.info("starting eflect");
     if (executor == null) {
@@ -93,83 +103,70 @@ public final class EflectCalmnessMonitor {
     freqMonitor.stop();
 
     logger.info("stopped eflect");
-    logger.info("ran in " + Duration.between(time[0], time[1]).toString());
+    logger.info("ran for " + Duration.between(time[0], time[1]).toString());
 
     double consumed = 0;
     for (int domain = 0; domain < Rapl.getInstance().getSocketCount(); domain++) {
       for (int component = 0; component < 3; component++) {
         double componentEnergy = energy[1][domain][component] - energy[0][domain][component];
-        if (componentEnergy < 0) {
-          componentEnergy += Rapl.getInstance().getWrapAroundEnergy();
-        }
         consumed += componentEnergy;
       }
+    }
+    if (consumed < 0) {
+      consumed += Rapl.getInstance().getWrapAroundEnergy();
     }
     logger.info("system consumed " + consumed + "J");
 
     if (eflect != null) {
       footprints = eflect.read();
       eflect = null;
-      logger.info("app consumed " + Double.toString(sum(footprints)) + "J");
+      logger.info("runtime consumed " + Double.toString(sum(footprints)) + "J");
     } else {
       footprints = null;
     }
   }
 
   // TODO(timur): all of these dump methods need to be updated when we change the footprint.
-  /** Writes the data in the collectors to the provided directory. */
-  public void dump(String dataDirectoryName) {
-    File dataDirectory = new File(outputPath, dataDirectoryName);
-    if (!dataDirectory.exists()) {
-      dataDirectory.mkdirs();
-    }
+  public void dump() {
+    File dataDirectory = getOutputDirectory();
     if (footprints != null) {
-      writeCsv(
-          dataDirectory.getPath(),
-          "footprint.csv",
-          "id,name,start,end,domain,app_energy,total_energy,trace", // header
-          footprints); // data
+      writeCsv(dataDirectory.getPath(), "footprint.csv", FOOTPRINT_HEADER, footprints);
     }
-
-    String[] cpus = new String[CPU_COUNT];
-    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-      cpus[cpu] = Integer.toString(cpu);
-    }
-    writeCsv(
-        dataDirectory.getPath(),
-        "calmness.csv",
-        String.join(",", "timestamp", String.join(",", cpus)), // header
-        List.of(freqMonitor.read())); // data
+    writeFreqs("calmness.csv");
   }
 
-  public void dump(String dataDirectoryName, String tag) {
-    File dataDirectory = new File(outputPath, dataDirectoryName);
-    if (!dataDirectory.exists()) {
-      dataDirectory.mkdirs();
-    }
+  public void dump(String tag) {
+    File dataDirectory = getOutputDirectory();
     if (footprints != null) {
-      writeCsv(
-          dataDirectory.getPath(),
-          "footprint-" + tag + ".csv",
-          "id,name,start,end,energy,trace", // header
-          footprints); // data
+      writeCsv(dataDirectory.getPath(), "footprint-" + tag + ".csv", FOOTPRINT_HEADER, footprints);
     }
-
-    String[] cpus = new String[CPU_COUNT];
-    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
-      cpus[cpu] = Integer.toString(cpu);
-    }
-    writeCsv(
-        dataDirectory.getPath(),
-        "calmness-" + tag + ".csv",
-        String.join(",", "timestamp", String.join(",", cpus)), // header
-        List.of(freqMonitor.read())); // data
+    writeFreqs("calmness-" + tag + "-.csv");
   }
 
   /** Shutdown the executor. */
   public void shutdown() {
     executor.shutdown();
     executor = null;
+  }
+
+  private File getOutputDirectory() {
+    File outputDir = new File(outputPath);
+    if (!outputDir.exists()) {
+      outputDir.mkdirs();
+    }
+    return outputDir;
+  }
+
+  private void writeFreqs(String fileName) {
+    String[] cpus = new String[CPU_COUNT];
+    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+      cpus[cpu] = Integer.toString(cpu);
+    }
+    writeCsv(
+        getOutputDirectory().getPath(),
+        fileName,
+        String.join(",", "timestamp", String.join(",", cpus)), // header
+        List.of(freqMonitor.read())); // data
   }
 
   private static double sum(Iterable<EnergyFootprint> footprints) {
