@@ -9,6 +9,7 @@ import eflect.data.EnergySample;
 import eflect.data.Sample;
 import eflect.data.SampleCollection;
 import eflect.data.StackTraceSample;
+import eflect.data.jiffies.JiffiesAccountant;
 import eflect.data.jiffies.ProcStatSample;
 import eflect.data.jiffies.ProcTaskSample;
 import java.io.File;
@@ -70,7 +71,7 @@ public final class FakeLinuxEflect extends Eflect {
   }
 
   public FakeLinuxEflect(ScheduledExecutorService executor, Duration period) {
-    super(getSources(), 1, 1, 0, cpu -> 0, executor, period);
+    super(getSources(), 1, 1, 0, () -> new JiffiesAccountant(1, cpu -> 0), 100, executor, period);
   }
 
   public static void main(String[] args) throws Exception {
