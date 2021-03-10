@@ -56,6 +56,29 @@ java_library(
 )
 
 java_library(
+  name = "writer",
+  visibility = ["//visibility:public"],
+  srcs = ["LinuxWriter.java"],
+  deps = [
+    "//java/eflect/data",
+    "//java/eflect/data/jiffies",
+    "//java/eflect/util",
+    "@clerk//java/clerk",
+    "@clerk//java/clerk:fixed_period",
+    "@jRAPL//src/java/jrapl",
+  ],
+  exports = [
+    "//java/eflect/data",
+    "//java/eflect/data/jiffies",
+    "@clerk//java/clerk",
+    "@clerk//java/clerk:fixed_period",
+  ],
+  data = [
+    ":lib-cpu-scaler",
+  ]
+)
+
+java_library(
   name = "freq",
   visibility = ["//visibility:public"],
   srcs = ["CpuFreqMonitor.java"],

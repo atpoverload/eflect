@@ -13,6 +13,16 @@ import java.util.logging.Logger;
 public final class WriterUtil {
   private static final Logger logger = LoggerUtil.getLogger();
 
+  public static void writeCsv(String directory, String fileName, Iterable<?> data) {
+    try (PrintWriter writer = new PrintWriter(new FileWriter(new File(directory, fileName)))) {
+      for (Object d : data) {
+        writer.println(d.toString());
+      }
+    } catch (IOException e) {
+      logger.log(Level.INFO, "unable to write " + new File(directory, fileName), e);
+    }
+  }
+
   public static void writeCsv(String directory, String fileName, String header, Iterable<?> data) {
     try (PrintWriter writer = new PrintWriter(new FileWriter(new File(directory, fileName)))) {
       writer.println(header);

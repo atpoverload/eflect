@@ -1,5 +1,19 @@
 load("@rules_java//java:defs.bzl", "java_library", "java_binary")
 
+java_binary(
+  name = "dacapo_written",
+  visibility = ["//visibility:public"],
+  main_class = "Harness",
+  srcs = [
+    "WrittenDaCapo.java",
+  ],
+  deps = [
+    "@eflect//java/eflect:writer",
+    "@dacapo",
+  ],
+  args = ["-c eflect.experiments.WrittenDaCapo --no-validation"]
+)
+
 java_library(
   name = "monitor",
   visibility = ["//visibility:public"],
