@@ -2,6 +2,7 @@ package eflect.data.jiffies;
 
 import eflect.data.Sample;
 import java.time.Instant;
+import java.util.ArrayList;
 
 /** A sample of jiffies consumed as reported by /proc/stat. */
 public final class ProcStatSample implements Sample {
@@ -37,5 +38,17 @@ public final class ProcStatSample implements Sample {
       }
     }
     return jiffies;
+  }
+
+  @Override
+  public String toString() {
+    ArrayList<String> stats = new ArrayList<>();
+    long[] jiffies = getJiffies();
+    for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
+      stats.add(
+          String.join(
+              ",", timestamp.toString(), Integer.toString(cpu), Long.toString(jiffies[cpu])));
+    }
+    return String.join(System.lineSeparator(), stats);
   }
 }

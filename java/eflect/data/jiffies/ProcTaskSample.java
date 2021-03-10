@@ -54,4 +54,13 @@ public final class ProcTaskSample implements Sample {
     }
     return taskStats;
   }
+
+  @Override
+  public String toString() {
+    ArrayList<String> stats = new ArrayList<>();
+    for (TaskStat stat : getTaskStats()) {
+      stats.add(String.join(",", timestamp.toString(), stat.toString()));
+    }
+    return String.join(System.lineSeparator(), stats);
+  }
 }
