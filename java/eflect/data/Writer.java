@@ -28,7 +28,8 @@ public final class Writer implements Processor<Sample, Boolean> {
   @Override
   public final Boolean process() {
     for (Class<?> cls : data.keySet()) {
-      writeCsv(outputPath, cls.toString() + ".csv", data.get(cls));
+      String[] clsName = cls.toString().split(".");
+      writeCsv(outputPath, clsName[clsName.length] + ".csv", data.get(cls));
     }
     return true;
   }
