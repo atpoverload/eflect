@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /** A processor that writes csv files from samples by sample type. */
-public final class Writer implements Processor<Sample, Boolean> {
+public final class SampleWriter implements Processor<Sample, Boolean> {
   private final HashMap<Class<?>, ArrayList<Sample>> data = new HashMap<>();
   protected final String outputPath;
 
-  public Writer(String outputPath) {
+  public SampleWriter(String outputPath) {
     this.outputPath = outputPath;
   }
 
@@ -28,8 +28,8 @@ public final class Writer implements Processor<Sample, Boolean> {
   @Override
   public final Boolean process() {
     for (Class<?> cls : data.keySet()) {
-      String[] clsName = cls.toString().split(".");
-      writeCsv(outputPath, clsName[clsName.length] + ".csv", data.get(cls));
+      String[] clsName = cls.toString().split("\\.");
+      writeCsv(outputPath, clsName[clsName.length - 1] + ".csv", data.get(cls));
     }
     return true;
   }

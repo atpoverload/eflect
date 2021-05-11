@@ -2,15 +2,14 @@ package eflect;
 
 import static java.util.stream.Collectors.toList;
 
-import clerk.FixedPeriodClerk;
-import clerk.Processor;
+import clerk.storage.ListStorage;
+import clerk.util.FixedPeriodClerk;
 import eflect.data.Sample;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 
 /** A profiler that outputs timestamped cpu freqs. */
@@ -40,18 +39,12 @@ public final class CpuFreqMonitor extends FixedPeriodClerk<String> {
   public CpuFreqMonitor(ScheduledExecutorService executor, Duration period) {
     super(
         () -> new CpuFreqSample(Instant.now(), readCpuFreqs()),
-        new Processor<CpuFreqSample, String>() {
-          private final ArrayList<CpuFreqSample> data = new ArrayList();
-
-          @Override
-          public void add(CpuFreqSample sample) {
-            data.add(sample);
-          }
-
+        new ListStorage<CpuFreqSample, String>() {
           @Override
           public String process() {
             return String.join(
-                System.lineSeparator(), data.stream().map(x -> x.toString()).collect(toList()));
+                System.lineSeparator(),
+                getData().stream().map(x -> x.toString()).collect(toList()));
           }
         },
         executor,

@@ -23,14 +23,12 @@ java_library(
   deps = [
     "//java/eflect/data",
     "//java/eflect/data/jiffies",
-    "@clerk//java/clerk",
-    "@clerk//java/clerk:fixed_period",
+    "@clerk//java/clerk/util",
   ],
   exports = [
     "//java/eflect/data",
     "//java/eflect/data/jiffies",
-    "@clerk//java/clerk",
-    "@clerk//java/clerk:fixed_period",
+    "@clerk//java/clerk/util",
   ]
 )
 
@@ -56,22 +54,23 @@ java_library(
 )
 
 java_library(
-  name = "writer",
+  name = "sample_collector",
   visibility = ["//visibility:public"],
-  srcs = ["LinuxWriter.java"],
+  srcs = ["ProcRaplSampleCollector.java"],
   deps = [
     "//java/eflect/data",
     "//java/eflect/data/jiffies",
+    "//java/eflect/data/jiffies:sources",
     "//java/eflect/util",
-    "@clerk//java/clerk",
-    "@clerk//java/clerk:fixed_period",
+    "@clerk//java/clerk/storage",
+    "@clerk//java/clerk/util",
     "@jRAPL//src/java/jrapl",
   ],
   exports = [
     "//java/eflect/data",
     "//java/eflect/data/jiffies",
-    "@clerk//java/clerk",
-    "@clerk//java/clerk:fixed_period",
+    "@clerk//java/clerk/storage",
+    "@clerk//java/clerk/util",
   ],
   data = [
     ":lib-cpu-scaler",
@@ -85,11 +84,11 @@ java_library(
   deps = [
     "//java/eflect/data",
     "@clerk//java/clerk",
-    "@clerk//java/clerk:fixed_period",
+    "@clerk//java/clerk/util",
   ],
   exports = [
     "//java/eflect/data",
     "@clerk//java/clerk",
-    "@clerk//java/clerk:fixed_period",
+    "@clerk//java/clerk/util",
   ],
 )

@@ -1,6 +1,6 @@
 package eflect;
 
-import clerk.FixedPeriodClerk;
+import clerk.util.FixedPeriodClerk;
 import eflect.data.Accountant;
 import eflect.data.AccountantMerger;
 import eflect.data.EnergyAccountant;
