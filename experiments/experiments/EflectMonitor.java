@@ -58,7 +58,7 @@ public final class EflectMonitor {
       executor = newScheduledThreadPool(5, threadFactory);
     }
     Duration period = Duration.ofMillis(periodMillis);
-    if (!Duration.ZERO.equals(period)) {
+    if (Duration.ZERO.equals(period)) {
       throw new RuntimeException("cannot sample with a period of " + period);
     }
     collector = new EflectCollector(executor, period);
