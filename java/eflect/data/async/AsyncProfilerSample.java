@@ -1,5 +1,7 @@
 package eflect.data.async;
 
+import static java.util.stream.Collectors.joining;
+
 import eflect.data.Sample;
 import eflect.data.SampleCollection;
 import eflect.data.StackTraceSample;
@@ -39,6 +41,6 @@ public final class AsyncProfilerSample implements SampleCollection {
 
   @Override
   public String toString() {
-    return records;
+    return getSamples().stream().map(s -> s.toString()).collect(joining(System.lineSeparator()));
   }
 }
