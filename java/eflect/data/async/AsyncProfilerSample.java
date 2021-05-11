@@ -27,7 +27,7 @@ public final class AsyncProfilerSample implements SampleCollection {
   @Override
   public Collection<Sample> getSamples() {
     ArrayList<Sample> samples = new ArrayList();
-    for (String record : records.split("\n")) {
+    for (String record : records.split(System.lineSeparator())) {
       String[] entries = record.split(",");
       Instant timestamp = Instant.ofEpochMilli(Long.parseLong(entries[0]));
       long id = Long.parseLong(entries[1]);
@@ -35,5 +35,10 @@ public final class AsyncProfilerSample implements SampleCollection {
       samples.add(new StackTraceSample(timestamp, id, stackTrace));
     }
     return samples;
+  }
+
+  @Override
+  public String toString() {
+    return records;
   }
 }

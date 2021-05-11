@@ -29,4 +29,9 @@ public final class StackTraceSample implements Sample {
   public String getStackTrace() {
     return stackTrace;
   }
+
+  @Override
+  public String toString() {
+    return String.join(",", timestamp.toString(), Long.toString(id), stackTrace);
+  }
 }
