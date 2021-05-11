@@ -17,49 +17,12 @@ genrule(
 )
 
 java_library(
-  name = "eflect",
-  visibility = ["//visibility:public"],
-  srcs = ["Eflect.java"],
-  deps = [
-    "//java/eflect/data",
-    "//java/eflect/data/jiffies",
-    "@clerk//java/clerk/util",
-  ],
-  exports = [
-    "//java/eflect/data",
-    "//java/eflect/data/jiffies",
-    "@clerk//java/clerk/util",
-  ]
-)
-
-java_library(
-  name = "linux_eflect",
-  visibility = ["//visibility:public"],
-  srcs = ["LinuxEflect.java"],
-  deps = [
-    ":eflect",
-    "//java/eflect/data/async",
-    "//java/eflect/util",
-    "@async-profiler",
-    "@jRAPL//src/java/jrapl",
-  ],
-  exports = [
-    ":eflect",
-    "//java/eflect/data/async",
-  ],
-  data = [
-    ":lib-async-profiler",
-    ":lib-cpu-scaler",
-  ]
-)
-
-java_library(
   name = "sample_collector",
   visibility = ["//visibility:public"],
-  srcs = ["ProcRaplSampleCollector.java"],
+  srcs = ["EflectCollector.java"],
   deps = [
     "//java/eflect/data",
-    "//java/eflect/data/jiffies",
+    "//java/eflect/data/async:sources",
     "//java/eflect/data/jiffies:sources",
     "//java/eflect/util",
     "@clerk//java/clerk/storage",
@@ -68,27 +31,11 @@ java_library(
   ],
   exports = [
     "//java/eflect/data",
-    "//java/eflect/data/jiffies",
     "@clerk//java/clerk/storage",
     "@clerk//java/clerk/util",
   ],
   data = [
     ":lib-cpu-scaler",
+    ":lib-async-profiler",
   ]
-)
-
-java_library(
-  name = "freq",
-  visibility = ["//visibility:public"],
-  srcs = ["CpuFreqMonitor.java"],
-  deps = [
-    "//java/eflect/data",
-    "@clerk//java/clerk",
-    "@clerk//java/clerk/util",
-  ],
-  exports = [
-    "//java/eflect/data",
-    "@clerk//java/clerk",
-    "@clerk//java/clerk/util",
-  ],
 )

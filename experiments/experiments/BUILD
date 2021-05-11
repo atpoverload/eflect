@@ -1,28 +1,13 @@
 load("@rules_java//java:defs.bzl", "java_library", "java_binary")
 
-java_binary(
-  name = "dacapo_written",
-  visibility = ["//visibility:public"],
-  main_class = "Harness",
-  srcs = [
-    "WrittenDaCapo.java",
-  ],
-  deps = [
-    "@eflect//java/eflect:writer",
-    "@dacapo",
-  ],
-  args = ["-c eflect.experiments.WrittenDaCapo --no-validation"]
-)
-
 java_library(
   name = "monitor",
   visibility = ["//visibility:public"],
   srcs = [
-    "EflectCalmnessMonitor.java",
+    "EflectMonitor.java",
   ],
   deps = [
-    "@eflect//java/eflect:freq",
-    "@eflect//java/eflect:linux_eflect",
+    "@eflect//java/eflect:sample_collector",
     "@eflect//java/eflect/util",
     "@jRAPL//src/java/jrapl",
   ]
@@ -39,7 +24,6 @@ java_binary(
     ":monitor",
     "@dacapo",
   ],
-  jvm_flags = ["-Deflect.output=/home/timur/projects/data/dacapo"],
   args = ["-c eflect.experiments.DaCapo --no-validation"]
 )
 
@@ -53,30 +37,9 @@ java_binary(
   deps = [
     ":monitor",
     "//experiments/util",
-    "@eflect//java/eflect/util",
     "@tensorflow",
   ],
   jvm_flags = [
-    "-Deflect.output=/home/timur/projects/data/tensorflow",
-    "-Dtf.lib=/home/timur/projects/eflect/experiments/tensorflow/bazel-bin/tensorflow/java/libtensorflow_jni.so",
-  ]
-)
-
-java_binary(
-  name = "tensorflow_hub",
-  visibility = ["//visibility:public"],
-  main_class = "eflect.experiments.TensorflowSavedModelDriver",
-  srcs = [
-    "TensorflowSavedModelDriver.java",
-  ],
-  deps = [
-    ":monitor",
-    "//experiments/util",
-    "@eflect//java/eflect/util",
-    "@tensorflow",
-  ],
-  jvm_flags = [
-    "-Deflect.output=/home/timur/projects/data/tensorflow",
     "-Dtf.lib=/home/timur/projects/eflect/experiments/tensorflow/bazel-bin/tensorflow/java/libtensorflow_jni.so",
   ]
 )

@@ -2,7 +2,6 @@ package eflect.experiments;
 
 import static eflect.experiments.util.TensorFlowUtil.normalizeImage;
 import static eflect.experiments.util.TensorFlowUtil.readBytes;
-import static eflect.util.LoggerUtil.getLogger;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -35,19 +34,19 @@ public class TensorflowDriver {
   private static void executeGraph(byte[] graphDef, Tensor<?> data) {
     try (Graph g = new Graph()) {
       g.importGraphDef(graphDef);
-      int iters = 10;
-      int batches = 250;
-      EflectCalmnessMonitor.getInstance().start(41);
+      int iters = 20;
+      int batches = 1250;
+      EflectMonitor.getInstance().start();
       for (int i = 0; i < iters * batches; i++) {
         try (Session s = new Session(g)) {
           List<Tensor<?>> result =
               s.runner().feed("input", data).fetch("InceptionV3/Predictions/Reshape/shape").run();
         }
         if ((i + 1) % (batches) == 0) {
-          getLogger().info("completed iteration " + Integer.toString(batches / i));
-          EflectCalmnessMonitor.getInstance().stop();
-          EflectCalmnessMonitor.getInstance().dump(Integer.toString(batches / i));
-          EflectCalmnessMonitor.getInstance().start(41);
+          System.out.println("completed iteration " + Integer.toString(batches / i));
+          EflectMonitor.getInstance().stop();
+          EflectMonitor.getInstance().dump();
+          EflectMonitor.getInstance().start();
         }
       }
     }
