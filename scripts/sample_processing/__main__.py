@@ -10,48 +10,32 @@ from processing import pre_process
 
 def main():
     root = argv[1]
-    print(root)
 
-    # app, cpu, energy = pre_process(root)
-    #
-    # # hacky code
-    # fig, axs = jiffies_plot(app.unstack().unstack().rolling('5s').mean().stack().stack().groupby(['timestamp', 'run', 'domain']).sum(), cpu.unstack().unstack().rolling('5s').mean().stack().stack().groupby(['timestamp', 'run', 'domain']).sum())
-    #
-    # name = root.split(os.path.sep)[-1]
-    # plt.suptitle(name, fontsize = 24)
-    # plt.savefig('plots/' + name + '-sys-jiffies.pdf', bbox_inches = 'tight')
-    # plt.close()
+    print("processing sample data at \"" + root + "\"")
+    app, cpu, energy, traces = pre_process(root)
 
-    df = account_jiffies(*pre_process(root))
-    print(df)
-    df = df.unstack().unstack().dropna().stack().stack()
-    df = df.groupby(['timestamp', 'run', 'domain']).agg({'app': 'sum', 'total': 'mean'})
+    accounted = account_application_energy(app, cpu, energy)
+    accounted.to_csv(os.path.join(root, 'accounted-energy.csv'))
 
-    app = df.app.unstack().unstack().rolling('5s').mean().stack().stack().groupby(['timestamp', 'run', 'domain']).sum()
-    total = df.total.unstack().unstack().rolling('5s').mean().stack().stack().groupby(['timestamp', 'run', 'domain']).mean()
-
-    metrics = compute_metrics(app.groupby(['timestamp', 'domain']).sum(), total.groupby(['timestamp', 'domain']).mean())
-    fig, axs = jiffies_accounting_plot(app, total, metrics)
-
-    name = root.split(os.path.sep)[-1]
-    plt.suptitle(name, fontsize = 24)
-    plt.savefig('plots/' + name + '-jiffies.pdf', bbox_inches = 'tight')
+    app = accounted.groupby(['timestamp', 'domain']).sum()
+    print('app consumed ' + '{:.2f}'.format(app.sum()) + '/' + '{:.2f}'.format(energy.sum()) + ' J')
+    fig, axs = energy_accounting_plot(app.unstack().rolling('50ms').mean().stack(), energy.unstack().rolling('50ms').mean().stack())
+    plt.savefig(os.path.join(root, 'accounted-energy.pdf'), bbox_inches = 'tight')
     plt.close()
 
-    df = account_application_energy(*pre_process(root))
-    df = df.unstack().unstack().dropna().stack().stack()
-    df = df.groupby(['timestamp', 'run', 'domain']).agg({'app': 'sum', 'total': 'mean'})
+    threads = accounted.reset_index()
+    threads.id = threads.id.str.split('-').str[0].fillna(-1).astype(int)
+    threads = threads.set_index(['timestamp', 'id'])[0]
 
-    app = df.app.unstack().unstack().rolling('5s').mean().stack().stack().groupby(['timestamp', 'run', 'domain']).sum()
-    total = df.total.unstack().unstack().rolling('5s').mean().stack().stack().groupby(['timestamp', 'run', 'domain']).mean()
+    traces = traces.set_index(['timestamp', 'id'])
 
-    metrics = compute_metrics(app.groupby(['timestamp', 'domain']).sum(), total.groupby(['timestamp', 'domain']).mean())
-    fig, axs = energy_accounting_plot(app, total, metrics)
+    aligned = pd.merge(threads, traces, left_index = True, right_index = True)
+    aligned.columns = ['energy', 'trace']
+    aligned.energy = aligned.energy / aligned.groupby(['timestamp', 'id']).energy.count()
 
-    name = root.split(os.path.sep)[-1]
-    plt.suptitle(name, fontsize = 24)
-    plt.savefig('plots/' + name + '.pdf', bbox_inches = 'tight')
-    plt.close()
+    aligned.to_csv(os.path.join(root, 'aligned-energy.csv'))
+
+    return
 
 if __name__ == '__main__':
     main()

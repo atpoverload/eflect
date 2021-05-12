@@ -25,8 +25,8 @@ public final class EflectMonitor {
         t.setDaemon(true);
         return t;
       };
-  private static ScheduledExecutorService executor;
 
+  private static ScheduledExecutorService executor;
   private static EflectMonitor instance;
 
   /** Creates an instance of the underlying class if it hasn't been created yet. */

@@ -1,3 +1,6 @@
 bazel-*
 *.csv
+*.pdf
 *.log
+
+**/__pycache__

@@ -5,8 +5,6 @@ from sys import argv
 import numpy as np
 import pandas as pd
 
-from tqdm import tqdm
-
 # constants for vaporeon/jolteon experiments
 HOT_ITERS_RATIO = 5
 WRAP_AROUND_VALUE = 16384
@@ -14,7 +12,7 @@ SAMPLE_INTERVAL = '50ms'
 WINDOW_SIZE = '501ms'
 DOMAIN_CONVERSION = lambda x: 0 if int(x) < 20 else 1
 
-def to_timestamp(timestamps):
+def bucket_timestamps(timestamps):
     return pd.to_datetime(timestamps).dt.floor(SAMPLE_INTERVAL)
 
 def max_rolling_difference(df, window_size = WINDOW_SIZE):
@@ -35,7 +33,7 @@ def check_wrap_around(value):
 def read_energy_data(path):
     df = pd.read_csv(path, header = None)
     df.columns = ['timestamp', 'domain', 'dram', 'cpu', 'package']
-    df.timestamp = to_timestamp(df.timestamp)
+    df.timestamp = bucket_timestamps(df.timestamp)
     df = df.groupby(['timestamp', 'domain']).min()
     df.columns.name = 'component'
 
@@ -45,25 +43,28 @@ def read_energy_data(path):
 
     return energy
 
-def read_full_cpu_data(path):
+def read_app_data(path):
     df = pd.read_csv(path, header = None)
-    df.columns = ['timestamp', 'cpu', 'user', 'nice', 'system', 'irq', 'softirq', 'steal', 'guest', 'guest_nice']
+    df.columns = ['timestamp', 'id', 'name', 'cpu', 'jiffies']
+    df = df[~df.name.str.contains('eflect-')]
 
-    df.timestamp = to_timestamp(df.timestamp)
+    df.timestamp = bucket_timestamps(df.timestamp)
+    df['domain'] = df.cpu.apply(DOMAIN_CONVERSION)
+    df['id'] = df.id.astype(str) + '-' + df.name
 
-    jiffies, ts = max_rolling_difference(df.groupby(['timestamp', 'cpu']).min().unstack())
-    jiffies = jiffies.stack().reset_index()
-    jiffies['domain'] = jiffies.cpu.apply(DOMAIN_CONVERSION)
-    jiffies = jiffies.groupby(['timestamp', 'domain']).sum().unstack()
-    jiffies = jiffies.div(ts, axis = 0).stack()
+    jiffies, ts = max_rolling_difference(df.groupby(['timestamp', 'id']).jiffies.min().unstack())
+    jiffies = jiffies.stack().to_frame()
+    domain = df.groupby(['timestamp', 'id']).domain.max()
+    jiffies['domain'] = domain
+    jiffies = jiffies.groupby(['timestamp', 'id', 'domain'])[0].sum().unstack().unstack().div(ts, axis = 0).stack().stack(0)
 
-    return jiffies.drop(columns = ['cpu'])
+    return jiffies
 
 def read_cpu_data(path):
     df = pd.read_csv(path, header = None)
     df.columns = ['timestamp', 'cpu', 'jiffies']
 
-    df.timestamp = to_timestamp(df.timestamp)
+    df.timestamp = bucket_timestamps(df.timestamp)
 
     jiffies, ts = max_rolling_difference(df.groupby(['timestamp', 'cpu']).jiffies.min().unstack())
     jiffies = jiffies.stack().reset_index()
@@ -73,43 +74,52 @@ def read_cpu_data(path):
 
     return jiffies
 
-def read_app_data(path):
+def read_async_data(path):
     df = pd.read_csv(path, header = None)
-    df.columns = ['timestamp', 'id', 'name', 'cpu', 'jiffies']
-    df = df[~df.name.str.contains('eflect-')]
+    df.columns = ['timestamp', 'id', 'trace']
 
-    df.timestamp = to_timestamp(df.timestamp)
-    df['domain'] = df.cpu.apply(DOMAIN_CONVERSION)
-    df['id'] = df.id.astype(str) + '-' + df.name
+    df.timestamp = bucket_timestamps(df.timestamp)
 
-    jiffies, ts = max_rolling_difference(df.groupby(['timestamp', 'id']).jiffies.min().unstack())
-    jiffies = jiffies.stack().to_frame()
-    domain = df.groupby(['timestamp', 'id']).domain.max()
-    jiffies['domain'] = domain
-    jiffies = jiffies.groupby(['timestamp', 'domain'])[0].sum().unstack().div(ts, axis = 0).stack()
-
-    return jiffies
+    return df
 
 def pre_process(data_dir):
     app = []
     cpu = []
     energy = []
-    for run in os.listdir(data_dir):
-        hot_iters = len(os.listdir(os.path.join(data_dir, run))) // HOT_ITERS_RATIO
-        for i in tqdm(os.listdir(os.path.join(data_dir, run))):
-            if int(i) < hot_iters:
-                continue
-            for f in os.listdir(os.path.join(data_dir, run, i)):
-                f = os.path.join(data_dir, run, i, f)
-                if 'ProcTaskSample' in f:
-                    app.append(read_app_data(f).to_frame().reset_index().assign(run = int(run)).set_index(['timestamp', 'run', 'domain'])[0])
-                elif 'FullProcStatSample' in f:
-                    # re-integrate this
-                    cpu.append(read_full_cpu_data(f).reset_index().assign(run = int(run)).set_index(['timestamp', 'run', 'domain']))
-                elif 'ProcStatSample' in f:
-                    continue
-                    cpu.append(read_cpu_data(f).to_frame().reset_index().assign(run = int(run)).set_index(['timestamp', 'run', 'domain'])[0])
-                elif 'EnergySample' in f:
-                    energy.append(read_energy_data(f).to_frame().reset_index().assign(run = int(run)).set_index(['timestamp', 'run', 'domain'])[0])
+    traces = []
+    for i in os.listdir(os.path.join(data_dir)):
+            f = os.path.join(data_dir, i)
+            if 'ProcTaskSample' in f:
+                app.append(read_app_data(f))
+            elif 'ProcStatSample' in f:
+                cpu.append(read_cpu_data(f))
+            elif 'EnergySample' in f:
+                energy.append(read_energy_data(f))
+            elif 'AsyncProfilerSample' in f:
+                traces.append(read_async_data(f))
 
-    return pd.concat(app), pd.concat(cpu), pd.concat(energy)
+    return pd.concat(app), pd.concat(cpu), pd.concat(energy), pd.concat(traces)
+
+# def pre_process(data_dir):
+#     app = []
+#     cpu = []
+#     energy = []
+#     for run in os.listdir(data_dir):
+#         hot_iters = len(os.listdir(os.path.join(data_dir, run))) // HOT_ITERS_RATIO
+#         for i in tqdm(os.listdir(os.path.join(data_dir, run))):
+#             if int(i) < hot_iters:
+#                 continue
+#             for f in os.listdir(os.path.join(data_dir, run, i)):
+#                 f = os.path.join(data_dir, run, i, f)
+#                 if 'ProcTaskSample' in f:
+#                     app.append(read_app_data(f).to_frame().reset_index().assign(run = int(run)).set_index(['timestamp', 'run', 'domain'])[0])
+#                 elif 'FullProcStatSample' in f:
+#                     # re-integrate this
+#                     cpu.append(read_full_cpu_data(f).reset_index().assign(run = int(run)).set_index(['timestamp', 'run', 'domain']))
+#                 elif 'ProcStatSample' in f:
+#                     continue
+#                     cpu.append(read_cpu_data(f).to_frame().reset_index().assign(run = int(run)).set_index(['timestamp', 'run', 'domain'])[0])
+#                 elif 'EnergySample' in f:
+#                     energy.append(read_energy_data(f).to_frame().reset_index().assign(run = int(run)).set_index(['timestamp', 'run', 'domain'])[0])
+#
+#     return pd.concat(app), pd.concat(cpu), pd.concat(energy)
