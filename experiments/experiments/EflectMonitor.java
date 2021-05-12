@@ -78,7 +78,7 @@ public final class EflectMonitor {
     Map<Class<?>, List<Sample>> data = collector.read();
     for (Class<?> cls : data.keySet()) {
       String[] clsName = cls.toString().split("\\.");
-      writeCsv(outputPath, clsName[clsName.length - 1] + ".csv", data.get(cls));
+      writeCsv(dataDirectory.getPath(), clsName[clsName.length - 1] + ".csv", data.get(cls));
     }
   }
 
