@@ -40,6 +40,7 @@ public final class EflectMonitor {
   private final String outputPath;
   private final long periodMillis;
 
+  private int sessionCount = 0;
   private EflectCollector collector;
 
   private EflectMonitor() {
@@ -68,6 +69,7 @@ public final class EflectMonitor {
   /** Stops the collector. */
   public void stop() {
     collector.stop();
+    sessionCount++;
   }
 
   /** Writes all sample data from the last session to the output directory. */
@@ -87,7 +89,7 @@ public final class EflectMonitor {
   }
 
   private File getOutputDirectory() {
-    File outputDir = new File(outputPath);
+    File outputDir = new File(outputPath, Integer.toString(sessionCount));
     if (!outputDir.exists()) {
       outputDir.mkdirs();
     }
