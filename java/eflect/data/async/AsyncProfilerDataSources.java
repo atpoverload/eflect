@@ -7,7 +7,6 @@ import one.profiler.Events;
 
 /** A Clerk that estimates the energy consumed by an application on an intel linux system. */
 public final class AsyncProfilerDataSources {
-  private static final String DUMMY_TRACE = "0,-1,dummy" + System.lineSeparator();
   private static final Duration ASYNC_PERIOD =
       Duration.ofMillis(Integer.parseInt(System.getProperty("eflect.async.period", "2")));
   private static final Duration ASYNC_COLLECTION_PERIOD =
@@ -30,6 +29,6 @@ public final class AsyncProfilerDataSources {
       last = now;
       return new AsyncProfilerSample(now, traces);
     }
-    return new AsyncProfilerSample(now, DUMMY_TRACE);
+    return new AsyncProfilerSample(now, "");
   }
 }

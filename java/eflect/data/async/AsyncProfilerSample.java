@@ -31,6 +31,9 @@ public final class AsyncProfilerSample implements SampleCollection {
     ArrayList<Sample> samples = new ArrayList();
     for (String record : records.split(System.lineSeparator())) {
       String[] entries = record.split(",");
+      if (entries.length < 3) {
+        continue;
+      }
       Instant timestamp = Instant.ofEpochMilli(Long.parseLong(entries[0]));
       long id = Long.parseLong(entries[1]);
       String stackTrace = entries[2];
