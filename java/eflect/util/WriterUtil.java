@@ -1,5 +1,6 @@
 package eflect.util;
 
+import eflect.data.Sample;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
