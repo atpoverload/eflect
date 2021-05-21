@@ -3,9 +3,7 @@ package eflect.experiments.util;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
 import org.tensorflow.Graph;
-import org.tensorflow.Operation;
 import org.tensorflow.Output;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
@@ -43,13 +41,6 @@ public class TensorFlowUtil {
       try (Session s = new Session(g)) {
         return s.runner().fetch(output.op().name()).run().get(0).expect(Float.class);
       }
-    }
-  }
-
-  public static void printOps(Graph graph) {
-    Iterator<Operation> ops = graph.operations();
-    while (ops.hasNext()) {
-      System.out.println(ops.next());
     }
   }
 

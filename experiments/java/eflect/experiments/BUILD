@@ -10,6 +10,7 @@ java_library(
     "@eflect//java/eflect:sample_collector",
     "@eflect//java/eflect/util",
     "@jRAPL//src/java/jrapl",
+    "@clerk//java/clerk",
   ]
 )
 
@@ -36,7 +37,7 @@ java_binary(
   ],
   deps = [
     ":monitor",
-    "//experiments/util",
+    "//java/eflect/experiments/util",
     "@tensorflow",
   ],
   jvm_flags = [
