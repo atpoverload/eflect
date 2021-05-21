@@ -1,6 +1,5 @@
 package eflect.data.jiffies;
 
-import eflect.data.Sample;
 import eflect.util.LoggerUtil;
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,8 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /** A clerk that collects jiffies and energy data for an intel linux system. */
@@ -54,12 +51,6 @@ public final class ProcDataSources {
       }
     }
     return new ProcTaskSample(Instant.now(), stats);
-  }
-
-  public static List<Supplier<Sample>> getProcSources() {
-    Supplier<Sample> stat = ProcDataSources::sampleProcStat;
-    Supplier<Sample> task = ProcDataSources::sampleTaskStats;
-    return List.of(stat, task);
   }
 
   private ProcDataSources() {}

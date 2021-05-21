@@ -6,6 +6,13 @@ import java.util.ArrayList;
 /** Sample of consumed global energy. */
 // TODO(timur): this will be concrete until we design domains
 public final class EnergySample implements Sample {
+  public static class Component {
+    public static int CPU = 1;
+    public static int DRAM = 0;
+    public static int PACKAGE = 2;
+    public static int GPU = 3;
+  }
+
   private final Instant timestamp;
   private final double[][] stats;
 

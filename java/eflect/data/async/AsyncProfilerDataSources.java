@@ -6,6 +6,7 @@ import one.profiler.AsyncProfiler;
 import one.profiler.Events;
 
 /** A Clerk that estimates the energy consumed by an application on an intel linux system. */
+// TODO: remove the hard-coded policies
 public final class AsyncProfilerDataSources {
   private static final Duration ASYNC_PERIOD =
       Duration.ofMillis(Integer.parseInt(System.getProperty("eflect.async.period", "2")));

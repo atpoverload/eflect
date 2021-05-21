@@ -2,7 +2,7 @@ load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 
 genrule(
   name = "lib-async-profiler",
-  visibility = ["//visibility:public"],
+  visibility = ["//visibility:private"],
   srcs = ["@async-profiler//:lib-async-profiler"],
   outs = ["libasyncProfiler.so"],
   cmd = "cp -f $< $@",
@@ -10,7 +10,7 @@ genrule(
 
 genrule(
   name = "lib-cpu-scaler",
-  visibility = ["//visibility:public"],
+  visibility = ["//visibility:private"],
   srcs = ["@jRAPL//src/jrapl:libCPUScaler.so"],
   outs = ["libCPUScaler.so"],
   cmd = "cp -f $< $@",
@@ -19,7 +19,7 @@ genrule(
 java_library(
   name = "sample_collector",
   visibility = ["//visibility:public"],
-  srcs = ["EflectCollector.java"],
+  srcs = ["EflectSampleCollector.java"],
   deps = [
     "//java/eflect/data",
     "//java/eflect/data/async:sources",

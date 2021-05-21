@@ -7,8 +7,8 @@ import java.util.ArrayList;
 /** A sample of jiffies consumed as reported by /proc/stat. */
 public final class ProcStatSample implements Sample {
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-  // indices for user, nice, system, irq, softirq, steal, guest, guest_nice
-  private static final int[] JIFFY_INDICES = new int[] {1, 2, 3, 6, 7, 8, 9, 10};
+  // indices for user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice
+  private static final int[] JIFFY_INDICES = new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
   private final Instant timestamp;
   private final String[] stats;
