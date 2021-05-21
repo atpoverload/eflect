@@ -4,8 +4,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 
 /** Sample of consumed global energy. */
-// TODO(timur): this will be concrete until we design domains
+// TODO: this will be concrete until we design domains
 public final class EnergySample implements Sample {
+  // TODO: still too crude
   public static class Component {
     public static int CPU = 1;
     public static int DRAM = 0;
@@ -27,7 +28,7 @@ public final class EnergySample implements Sample {
   }
 
   /** Returns the energy broken down by domain and component. */
-  // TODO(timur): eventually we have to think if the domains need to be further abstracted
+  // TODO: eventually we have to think if the domains need to be further abstracted
   public double[][] getEnergy() {
     return stats;
   }
