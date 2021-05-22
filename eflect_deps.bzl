@@ -5,8 +5,8 @@ def eflect_deps():
     if not native.existing_rule("clerk"):
       git_repository(
           name = "clerk",
-          commit = "b97757a562b7ebc2915eecc7b36c0c745972439d",
-          shallow_since = "1621041584 -0600",
+          commit = "ef9ebdf459eebb753cb8d77e144f3cc554a18332",
+          shallow_since = "1621661263 -0600",
           remote = "https://github.com/timurbey/clerk.git",
       )
     if not native.existing_rule("jRAPL"):

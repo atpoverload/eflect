@@ -45,8 +45,8 @@ public final class EflectMonitor {
   private Clerk<?> clerk;
 
   private EflectMonitor() {
-    this.outputPath = System.getProperty("eflect.output", ".");
-    this.periodMillis = Long.parseLong(System.getProperty("eflect.period", "50"));
+    this.outputPath = System.getProperty("eflect.output.directory", ".");
+    this.periodMillis = Long.parseLong(System.getProperty("eflect.period.default", "50"));
   }
 
   /** Creates and starts a new collector. If there is no executor, a new thread pool is spun-up. */
