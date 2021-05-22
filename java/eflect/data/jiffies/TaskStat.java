@@ -12,7 +12,8 @@ final class TaskStat {
     this.id = id;
     this.name = name;
     this.cpu = cpu;
-    this.jiffies = jiffies;
+    this.userJiffies = userJiffies;
+    this.systemJiffies = systemJiffies;
   }
 
   @Override

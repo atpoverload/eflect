@@ -11,7 +11,8 @@ public final class ProcTaskSample implements Sample {
   private static final int STAT_LENGTH = 52;
   private static final int TID_INDEX = 0;
   private static final int CPU_INDEX = 38;
-  private static final int[] JIFFY_INDICES = new int[] {13, 14};
+  private static final int USER_JIFFIES_INDEX = 13;
+  private static final int KERNEL_JIFFIES_INDEX = 14;
 
   private final Instant timestamp;
   private final Iterable<String> stats;
@@ -40,17 +41,13 @@ public final class ProcTaskSample implements Sample {
       String name = String.join(" ", Arrays.copyOfRange(stats, 1, 2 + offset));
       name = name.substring(1, name.length() - 1);
 
-      long jiffies = 0;
-      for (int i : JIFFY_INDICES) {
-        jiffies += Long.parseLong(stats[i + offset]);
-      }
-
       taskStats.add(
           new TaskStat(
               Long.parseLong(stats[TID_INDEX]),
               name,
               Integer.parseInt(stats[CPU_INDEX + offset]),
-              jiffies));
+              Long.parseLong(stats[USER_JIFFIES_INDEX + offset]),
+              Long.parseLong(stats[KERNEL_JIFFIES_INDEX + offset])));
     }
     return taskStats;
   }

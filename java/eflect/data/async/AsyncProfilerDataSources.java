@@ -32,4 +32,6 @@ public final class AsyncProfilerDataSources {
     }
     return new AsyncProfilerSample(now, "");
   }
+
+  private AsyncProfilerDataSources() {}
 }

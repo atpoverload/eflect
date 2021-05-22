@@ -24,7 +24,7 @@ public final class EflectSampleCollector extends FixedPeriodClerk<Map<Class<?>, 
       energy[socket][Component.CPU] = sample[socket][Component.CPU];
       energy[socket][Component.DRAM] = sample[socket][Component.DRAM];
       energy[socket][Component.PACKAGE] = sample[socket][Component.PACKAGE];
-      energy[socket][Component.GPU] = 0;
+      energy[socket][Component.GPU] = -1;
     }
     return new EnergySample(Instant.now(), energy);
   }
