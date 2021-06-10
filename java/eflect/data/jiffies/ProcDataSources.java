@@ -16,8 +16,10 @@ public final class ProcDataSources {
   private static final long PID = ProcessHandle.current().pid();
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
   private static final String SYSTEM_STAT_FILE = String.join(File.separator, "/proc", "stat");
-  private static final String APPLICATION_TASK_DIR =
-      String.join(File.separator, "/proc", Long.toString(PID), "task");
+
+  private static final String getTaskDir(long pid) {
+    return String.join(File.separator, "/proc", Long.toString(pid), "task");
+  }
 
   /** Reads the system's stat file and returns a timestamped sample. */
   public static ProcStatSample sampleProcStat() {
@@ -37,8 +39,17 @@ public final class ProcDataSources {
 
   /** Reads this application's thread's stat files and returns a timestamped sample. */
   public static ProcTaskSample sampleTaskStats() {
+    return sampleTaskStats(PID);
+  }
+
+  /** Reads another application's thread's stat files and returns a timestamped sample. */
+  public static ProcTaskSample sampleTaskStats(long pid) {
     ArrayList<String> stats = new ArrayList<String>();
-    File tasks = new File(APPLICATION_TASK_DIR);
+    File tasks = new File(getTaskDir(pid));
+    if (!tasks.exists()) {
+      return new ProcTaskSample(Instant.now(), stats);
+    }
+
     for (File task : tasks.listFiles()) {
       File statFile = new File(task, "stat");
       if (!statFile.exists()) {

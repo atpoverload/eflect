@@ -1,19 +1,17 @@
 load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 
-genrule(
-  name = "lib-async-profiler",
-  visibility = ["//visibility:private"],
-  srcs = ["@async-profiler//:lib-async-profiler"],
-  outs = ["libasyncProfiler.so"],
-  cmd = "cp -f $< $@",
-)
-
-genrule(
-  name = "lib-cpu-scaler",
-  visibility = ["//visibility:private"],
-  srcs = ["@jRAPL//src/jrapl:libCPUScaler.so"],
-  outs = ["libCPUScaler.so"],
-  cmd = "cp -f $< $@",
+java_binary(
+  name = "jiffies_collector",
+  visibility = ["//visibility:public"],
+  srcs = ["JiffiesCollector.java"],
+  deps = [
+    "//java/eflect/data",
+    "//java/eflect/data/jiffies:sources",
+    "//java/eflect/util",
+    "@clerk//java/clerk/storage",
+    "@clerk//java/clerk/util",
+  ],
+  main_class = "eflect.JiffiesCollector",
 )
 
 java_library(
@@ -38,4 +36,27 @@ java_library(
     ":lib-cpu-scaler",
     ":lib-async-profiler",
   ]
+)
+
+java_binary(
+  name = "monitor",
+  visibility = ["//visibility:public"],
+  runtime_deps = [":sample_collector"],
+  main_class = "eflect.EflectSampleCollector"
+)
+
+genrule(
+  name = "lib-async-profiler",
+  visibility = ["//visibility:private"],
+  srcs = ["@async-profiler//:lib-async-profiler"],
+  outs = ["libasyncProfiler.so"],
+  cmd = "cp -f $< $@",
+)
+
+genrule(
+  name = "lib-cpu-scaler",
+  visibility = ["//visibility:private"],
+  srcs = ["@jRAPL//src/jrapl:libCPUScaler.so"],
+  outs = ["libCPUScaler.so"],
+  cmd = "cp -f $< $@",
 )
