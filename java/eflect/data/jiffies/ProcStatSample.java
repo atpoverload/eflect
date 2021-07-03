@@ -25,16 +25,16 @@ public final class ProcStatSample implements Sample {
   }
 
   /** Parse and return the jiffies from the stat strings. */
-  public long[] getJiffies() {
-    long[] jiffies = new long[CPU_COUNT];
+  public long[][] getJiffies() {
+    long[][] jiffies = new long[CPU_COUNT][JIFFY_INDICES.length];
     for (String s : stats) {
       String[] stat = s.split(" ");
       if (stat.length < 11) {
         continue;
       }
       int cpu = Integer.parseInt(stat[0].substring(3));
-      for (int i : JIFFY_INDICES) {
-        jiffies[cpu] += Long.parseLong(stat[i]);
+      for (int i = 0; i < JIFFY_INDICES.length; i++) {
+        jiffies[cpu][i] += Long.parseLong(stat[JIFFY_INDICES[i]]);
       }
     }
     return jiffies;
@@ -43,12 +43,29 @@ public final class ProcStatSample implements Sample {
   @Override
   public String toString() {
     ArrayList<String> stats = new ArrayList<>();
-    long[] jiffies = getJiffies();
+    String[][] jiffies = getJiffiesString();
     for (int cpu = 0; cpu < CPU_COUNT; cpu++) {
       stats.add(
           String.join(
-              ",", timestamp.toString(), Integer.toString(cpu), Long.toString(jiffies[cpu])));
+              ",", timestamp.toString(), Integer.toString(cpu), String.join(",", jiffies[cpu])));
     }
     return String.join(System.lineSeparator(), stats);
+  }
+
+  /** Parse and return the jiffies as strings to convenience for {@code toString}. */
+  // TODO(timur): this and the toString rep will disappear once
+  public String[][] getJiffiesString() {
+    String[][] jiffies = new String[CPU_COUNT][JIFFY_INDICES.length];
+    for (String s : stats) {
+      String[] stat = s.split(" ");
+      if (stat.length < 11) {
+        continue;
+      }
+      int cpu = Integer.parseInt(stat[0].substring(3));
+      for (int i = 0; i < JIFFY_INDICES.length; i++) {
+        jiffies[cpu][i] = stat[JIFFY_INDICES[i]];
+      }
+    }
+    return jiffies;
   }
 }
