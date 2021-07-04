@@ -22,7 +22,7 @@ import jrapl.Rapl;
 
 /** A clerk that collects jiffies and energy data for an intel proc system. */
 public final class EflectSampleCollector extends FixedPeriodClerk<Map<Class<?>, List<Sample>>> {
-  private static final Sample sampleRapl() {
+  private static Sample sampleRapl() {
     double[][] sample = Rapl.getInstance().getEnergyStats();
     double[][] energy = new double[sample.length][4];
     for (int socket = 0; socket < sample.length; socket++) {
@@ -46,8 +46,7 @@ public final class EflectSampleCollector extends FixedPeriodClerk<Map<Class<?>, 
     return List.of(
         ProcDataSources::sampleProcStat,
         () -> ProcDataSources.sampleTaskStats(pid),
-        EflectSampleCollector::sampleRapl,
-        AsyncProfilerDataSources::sampleAsyncProfiler);
+        EflectSampleCollector::sampleRapl);
   }
 
   public EflectSampleCollector(ScheduledExecutorService executor, Duration period) {
@@ -86,7 +85,7 @@ public final class EflectSampleCollector extends FixedPeriodClerk<Map<Class<?>, 
 
     final AtomicInteger counter = new AtomicInteger();
     ScheduledExecutorService executor =
-        newScheduledThreadPool(2, r -> new Thread(r, "eflect-" + counter.getAndIncrement()));
+        newScheduledThreadPool(4, r -> new Thread(r, "eflect-" + counter.getAndIncrement()));
 
     EflectSampleCollector collector = new EflectSampleCollector(pid, executor, period);
     collector.start();
