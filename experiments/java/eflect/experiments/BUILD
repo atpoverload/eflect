@@ -41,6 +41,6 @@ java_binary(
     "@tensorflow",
   ],
   jvm_flags = [
-    "-Dtf.lib=/home/timur/projects/eflect/experiments/tensorflow/bazel-bin/tensorflow/java/libtensorflow_jni.so",
+    "-Dtf.lib=/home/timur/projects/eflect/experiments/third_party/tensorflow/bazel-bin/tensorflow/java/libtensorflow_jni.so",
   ]
 )
