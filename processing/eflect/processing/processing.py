@@ -8,7 +8,7 @@ import pandas as pd
 from eflect.processing.preprocessing import process_app_data
 from eflect.processing.preprocessing import process_cpu_data
 from eflect.processing.preprocessing import process_energy_data
-from eflect.processing.preprocessing import process_yappi_data
+from eflect.processing.preprocessing import process_asyncprof_data
 
 def account_application_energy(app, cpu, energy):
     return energy * (app / cpu).replace(np.inf, 1).clip(0, 1)
@@ -33,9 +33,10 @@ def align_methods(footprints, data_dir):
         energy = []
         for f in os.listdir(os.path.join(data_dir)):
             df = pd.read_csv(os.path.join(data_dir, f))
-            if 'YappiSample' in f:
-                df = footprints.groupby('id').sum() * process_yappi_data(df)
-                df = df.groupby('trace').sum().sort_values(ascending=False)
+            if 'AsyncProfilerSample' in f:
+                df = pd.merge(footprints, process_asyncprof_data(df), left_index=True, right_index=True)
+                df.energy = df.energy / df.groupby(['timestamp', 'id']).energy.count()
+                df = df.groupby('trace').energy.sum().sort_values(ascending=False)
                 energy.append(df)
 
         return pd.concat(energy)
@@ -49,6 +50,5 @@ def account_energy(path):
 
     ranking = align_methods(footprint, path)
     ranking.name = 'energy'
-    ranking = ranking / ranking.sum()
 
     return footprint, ranking

@@ -71,9 +71,8 @@ def process_cpu_data(df):
 
     return jiffies.drop(columns = ['cpu'])[0]
 
-def process_yappi_data(df):
-    """ Computes the jiffy rate of each 50ms bucket """
-    df.columns = ['id', 'trace', 'calls']
-    df = df.set_index(['id', 'trace']).calls
-    df = df / df.groupby(['id']).sum()
-    return df
+def process_asyncprof_data(df):
+    """ Formats the async-profiler data """
+    df.columns = ['timestamp', 'id', 'trace']
+    df.timestamp = bucket_timestamps(df.timestamp)
+    return df.set_index(['timestamp', 'id']).sort_index().trace
