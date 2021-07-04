@@ -5,15 +5,15 @@ def eflect_deps():
     if not native.existing_rule("clerk"):
       git_repository(
           name = "clerk",
-          commit = "ef9ebdf459eebb753cb8d77e144f3cc554a18332",
+          commit = "fca09da6425cbaf8a810924fefe8de7e8818551e",
           shallow_since = "1621661263 -0600",
           remote = "https://github.com/timurbey/clerk.git",
       )
     if not native.existing_rule("jRAPL"):
       git_repository(
           name = "jRAPL",
-          commit = "a09480ce128658d2916a9e52e02d23988dcaee2b",
-          shallow_since = "1610385469 -0700",
+          commit = "8ff40d7600fa3610c69de6ddfc15e60af3c4a5fc",
+          shallow_since = "1625415708 -0600",
           remote = "https://github.com/timurbey/jRAPL.git",
       )
     if not native.existing_rule("async-profiler"):

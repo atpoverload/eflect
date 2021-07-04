@@ -6,5 +6,7 @@ java_library(
   srcs = glob(["*.java"]),
   deps = [
     "@clerk//java/clerk",
+    "@clerk//java/clerk/util",
+    "@clerk//java/clerk/storage",
   ]
 )

@@ -7,7 +7,7 @@ java_library(
     "EflectMonitor.java",
   ],
   deps = [
-    "@eflect//java/eflect:sample_collector",
+    "@eflect//java/eflect:collector",
     "@eflect//java/eflect/util",
     "@jRAPL//src/java/jrapl",
     "@clerk//java/clerk",

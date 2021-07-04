@@ -18,4 +18,15 @@ java_library(
     "//java/eflect/data",
     "@async-profiler",
   ],
+  data = [
+    "lib-async-profiler",
+  ]
+)
+
+genrule(
+  name = "lib-async-profiler",
+  visibility = ["//visibility:private"],
+  srcs = ["@async-profiler//:lib-async-profiler"],
+  outs = ["libasyncProfiler.so"],
+  cmd = "cp -f $< $@",
 )

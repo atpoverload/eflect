@@ -31,7 +31,6 @@ public final class ProcDataSources {
       }
     } catch (Exception e) {
       logger.info("unable to read " + SYSTEM_STAT_FILE);
-      e.printStackTrace();
     } finally {
       return new ProcStatSample(Instant.now(), stats);
     }
@@ -58,7 +57,7 @@ public final class ProcDataSources {
       try {
         stats.add(Files.readString(Path.of(statFile.getPath())));
       } catch (Exception e) {
-        logger.info("unable to read task " + statFile);
+        logger.info("unable to read task " + statFile + " before it terminated");
       }
     }
     return new ProcTaskSample(Instant.now(), stats);
