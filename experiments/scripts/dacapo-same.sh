@@ -10,7 +10,7 @@ OUTPUT_DIR=$DATA_DIR
 pids=""
 for i in `seq 1 1 $RUNS`; do
   export DATA_DIR=$OUTPUT_DIR/$i
-  scripts/dacapo.sh $BENCHMARK -s $SIZE -n 1 --scratch-directory $SCRATCH_ROOT/$i &
+  scripts/dacapo.sh $BENCHMARK -s $SIZE -n 20 --scratch-directory $SCRATCH_ROOT/$i &
   pids+=$!" "
 done
 
