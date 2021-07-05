@@ -43,7 +43,7 @@ public class TensorflowDriver {
               s.runner().feed("input", data).fetch("InceptionV3/Predictions/Reshape/shape").run();
         }
         if ((i + 1) % (batches) == 0) {
-          System.out.println("completed iteration " + Integer.toString(batches / i));
+          System.out.println("completed iteration " + Integer.toString(i / batches));
           EflectMonitor.getInstance().stop();
           EflectMonitor.getInstance().dump();
           EflectMonitor.getInstance().start();

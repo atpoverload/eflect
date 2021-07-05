@@ -7,7 +7,6 @@ run_same_experiment() {
     export DATA_DIR=$OUTPUT_DIR/footprints/same/$RUNS/$BENCHMARK
     scripts/dacapo-same.sh $BENCHMARK $SIZE $RUNS
   done
-  exit
 }
 
 OUTPUT_DIR=$1

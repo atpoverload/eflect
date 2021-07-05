@@ -6,14 +6,14 @@ def eflect_deps():
       git_repository(
           name = "clerk",
           commit = "fca09da6425cbaf8a810924fefe8de7e8818551e",
-          shallow_since = "1621661263 -0600",
+          shallow_since = "1625416462 -0600",
           remote = "https://github.com/timurbey/clerk.git",
       )
     if not native.existing_rule("jRAPL"):
       git_repository(
           name = "jRAPL",
           commit = "7ab72298aada3f9f282fba3011c90671ed54e64b",
-          shallow_since = "1625415708 -0600",
+          shallow_since = "1625448924 -0600",
           remote = "https://github.com/timurbey/jRAPL.git",
       )
     if not native.existing_rule("async-profiler"):
