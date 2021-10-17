@@ -31,7 +31,6 @@ java_library(
   visibility = ["//visibility:public"],
   srcs = glob(["SampleCollector.java"]),
   deps = [
-    ":jiffies",
     "//protos/sample:sample_java_protos",
     "@clerk//java/clerk",
     "@clerk//java/clerk/storage",

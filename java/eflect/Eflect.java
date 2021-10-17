@@ -5,10 +5,10 @@ import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 import eflect.protos.sample.DataSet;
 import eflect.sample.JiffiesDataSources;
+import eflect.sample.RaplDataSources;
 import eflect.sample.SampleCollector;
 import java.io.FileOutputStream;
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,6 +17,8 @@ import java.util.logging.Logger;
 /** An unsafe interface to eflect. */
 public final class Eflect {
   private static final Logger logger = getLogger();
+
+  private static final long DEFAULT_PERIOD_MS = 50;
   private static final AtomicInteger counter = new AtomicInteger();
   private static final ThreadFactory threadFactory =
       r -> {
@@ -24,20 +26,9 @@ public final class Eflect {
         t.setDaemon(true);
         return t;
       };
-  private static final long DEFAULT_PERIOD_MS = 50;
 
   private static ScheduledExecutorService executor;
   private static Eflect instance;
-
-  private static SampleCollector newCollector(Duration period) {
-    return new SampleCollector(
-        List.of(
-            JiffiesDataSources::sampleCpus,
-            // RaplDataSources::sampleRapl,
-            JiffiesDataSources::sampleTasks),
-        executor,
-        period);
-  }
 
   /** Creates an instance of the underlying class if it hasn't been created yet. */
   public static synchronized Eflect getInstance() {
@@ -60,16 +51,26 @@ public final class Eflect {
   /** Creates and starts a new collector. If there is no executor, a new thread pool is spun-up. */
   public void start(long periodMillis) {
     logger.info("starting eflect");
+    // make sure we have an executor
     if (executor == null) {
       executor = newScheduledThreadPool(3, threadFactory);
     }
+    // clear out the old collector
+    if (collector != null) {
+      collector.stop();
+      collector.read();
+      collector = null;
+    }
+    // make sure the period is valid
     Duration period = Duration.ofMillis(periodMillis);
     if (Duration.ZERO.equals(period)) {
       throw new RuntimeException("cannot sample with a period of " + period);
     }
     // TODO: abstract the collector; we want to be able to switch to an online version
-    collector = newCollector(period);
-    collector.start();
+    collector = new SampleCollector(executor);
+    collector.start(JiffiesDataSources::sampleCpus, period);
+    collector.start(RaplDataSources::sampleRapl, period);
+    collector.start(JiffiesDataSources::sampleTasks, period);
   }
 
   /** Starts a collector with the default period. */

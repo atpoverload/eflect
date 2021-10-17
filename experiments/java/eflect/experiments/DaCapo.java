@@ -20,8 +20,7 @@ public final class DaCapo extends Callback {
   @Override
   public void stop(long duration) {
     super.stop(duration);
-    eflect.start();
-    System.out.println(System.getProperty("user.dir"));
+    eflect.stop();
     eflect.dump("eflect-data.pb");
   }
 
