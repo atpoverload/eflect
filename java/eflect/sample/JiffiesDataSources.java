@@ -20,6 +20,7 @@ public final class JiffiesDataSources {
   private static final Logger logger = LoggerUtil.getLogger();
   private static final long PID = ProcessHandle.current().pid();
 
+  /** Reads the cpu's stats and returns a sample from it. */
   public static Sample sampleCpus() {
     return Sample.newBuilder()
         .setCpu(CpuSource.readCpuStats().setTimestamp(Instant.now().toEpochMilli()))
@@ -145,6 +146,7 @@ public final class JiffiesDataSources {
       return stats;
     }
 
+    /** Extracts the name from the stat string. */
     private static final String getName(String[] stat, int offset) {
       String name = String.join(" ", Arrays.copyOfRange(stat, 1, 2 + offset));
       return name.substring(1, name.length() - 1);
@@ -158,6 +160,7 @@ public final class JiffiesDataSources {
               statString -> {
                 String[] stat = statString.split(" ");
                 if (stat.length >= STAT_LENGTH) {
+                  // task name can be space-delimited, so there may be extra entries
                   int offset = stat.length - STAT_LENGTH;
                   sample.addStat(
                       TaskStat.newBuilder()
