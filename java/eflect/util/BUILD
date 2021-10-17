@@ -1,10 +1,7 @@
 load("@rules_java//java:defs.bzl", "java_library")
 
 java_library(
-  name = "util",
+  name = "logger",
   visibility = ["//visibility:public"],
-  srcs = glob(["*.java"]),
-  deps = [
-    "//java/eflect/data",
-  ]
+  srcs = ["LoggerUtil.java"],
 )

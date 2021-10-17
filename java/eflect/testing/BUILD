@@ -1,19 +1,24 @@
 load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 
 java_library(
-  name = "eflect",
+  name = "fake_eflect",
   visibility = ["//visibility:public"],
-  srcs = ["Eflect.java"],
+  srcs = ["FakeEflect.java"],
   deps = [
     "//java/eflect/sample",
     "//java/eflect/sample:jiffies",
-    "//java/eflect/sample:rapl",
-    "//java/eflect/util:logger",
   ],
   exports = [
     "//java/eflect/sample",
     "//java/eflect/sample:jiffies",
-    "//java/eflect/sample:rapl",
-    "//java/eflect/util:logger",
+  ]
+)
+
+java_binary(
+  name = "fake_run",
+  visibility = ["//visibility:public"],
+  main_class = "eflect.testing.FakeEflect",
+  runtime_deps = [
+    ":fake_eflect"
   ]
 )
