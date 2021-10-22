@@ -23,13 +23,6 @@ def eflect_deps():
               "https://github.com/bazelbuild/rules_proto/archive/218ffa7dfa5408492dc86c01ee637614f8695c45.tar.gz",
           ],
       )
-    if not native.existing_rule("clerk"):
-      git_repository(
-          name = "clerk",
-          commit = "fca09da6425cbaf8a810924fefe8de7e8818551e",
-          shallow_since = "1625416462 -0600",
-          remote = "https://github.com/timurbey/clerk.git",
-      )
     # dep for linux systems
     if not native.existing_rule("jRAPL"):
       git_repository(
