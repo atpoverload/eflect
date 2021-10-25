@@ -32,9 +32,6 @@ java_library(
   srcs = glob(["SampleCollector.java"]),
   deps = [
     "//protos/sample:sample_java_protos",
-    "@clerk//java/clerk",
-    "@clerk//java/clerk/storage",
-    "@clerk//java/clerk/util",
   ],
   exports = [
     "//protos/sample:sample_java_protos",
