@@ -4,7 +4,7 @@
 
 ## Data
 
-`eflect` produces `EnergyFootprint`s of application threads:
+`eflect` produces a `DataSet` of samples which can be turned into a `Footprint`.
 
 ```json
 {
