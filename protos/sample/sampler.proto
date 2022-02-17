@@ -1,0 +1,36 @@
+syntax = "proto2";
+
+package eflect.protos.sample;
+
+import "protos/sample/sample.proto";
+
+option java_multiple_files = true;
+option java_package = "eflect.protos.sample";
+
+service Sampler {
+  rpc Start (StartRequest) returns (StartResponse) {}
+
+  rpc Stop (StopRequest) returns (StopResponse) {}
+
+  rpc Read (ReadRequest) returns (ReadResponse) {}
+}
+
+message StartRequest {
+  optional uint64 pid = 1;
+}
+
+message StartResponse {}
+
+message StopRequest {
+  optional uint64 pid = 1;
+}
+
+message StopResponse {}
+
+message ReadRequest {
+  optional uint64 pid = 1;
+}
+
+message ReadResponse {
+  optional DataSet data = 1;
+}

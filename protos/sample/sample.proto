@@ -1,0 +1,30 @@
+syntax = "proto2";
+
+package eflect.protos.sample;
+
+import "protos/sample/jiffies.proto";
+import "protos/sample/rapl.proto";
+import "protos/sample/battery_manager.proto";
+
+option java_multiple_files = true;
+option java_package = "eflect.protos.sample";
+
+message Sample {
+  oneof data {
+    // energy data
+    RaplSample rapl = 1;
+
+    // jiffies data
+    CpuStatSample cpu = 2;
+    TaskStatSample task = 3;
+  }
+}
+
+message DataSet {
+  // energy data
+  repeated RaplSample rapl = 1;
+
+  // jiffies data
+  repeated CpuStatSample cpu = 2;
+  repeated TaskStatSample task = 3;
+}

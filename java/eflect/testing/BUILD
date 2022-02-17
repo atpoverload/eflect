@@ -1,40 +1,24 @@
 load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 
-genrule(
-  name = "lib-async-profiler",
-  visibility = ["//visibility:public"],
-  srcs = ["@async-profiler//:lib-async-profiler"],
-  outs = ["libasyncProfiler.so"],
-  cmd = "cp -f $< $@",
-)
-
 java_library(
-  name = "testing",
+  name = "fake_eflect",
   visibility = ["//visibility:public"],
-  srcs = ["FakeLinuxEflect.java"],
+  srcs = ["FakeEflect.java"],
   deps = [
-    "//java/eflect",
-    "//java/eflect/data/async",
-    "//java/eflect/util",
-    "@async-profiler",
+    "//java/eflect/sample",
+    "//java/eflect/sample:jiffies",
   ],
   exports = [
-    "//java/eflect",
-    "//java/eflect/data",
-  ],
-  data = [
-    ":lib-async-profiler",
+    "//java/eflect/sample",
+    "//java/eflect/sample:jiffies",
   ]
 )
 
 java_binary(
-  name = "driver",
-  visibility = ["//visibility:private"],
-  main_class = "eflect.testing.FakeLinuxEflect",
+  name = "fake_run",
+  visibility = ["//visibility:public"],
+  main_class = "eflect.testing.FakeEflect",
   runtime_deps = [
-    ":testing",
-  ],
-  data = [
-
+    ":fake_eflect"
   ]
 )
