@@ -25,7 +25,7 @@ public final class SampleCollector {
   }
 
   /** Starts collector from each source. */
-  public final void start(Supplier<Sample> source, Duration period) {
+  public final void start(Supplier<? extends Sample> source, Duration period) {
     isRunning = true;
     sampleFutures.add(executor.submit(() -> collectAndReschedule(source, period)));
   }
@@ -73,7 +73,7 @@ public final class SampleCollector {
   }
 
   /** Collects a sample and then re-schedules it for the next period start. */
-  private Sample collectAndReschedule(Supplier<Sample> source, Duration period) {
+  private Sample collectAndReschedule(Supplier<? extends Sample> source, Duration period) {
     if (!isRunning) {
       return Sample.getDefaultInstance();
     }

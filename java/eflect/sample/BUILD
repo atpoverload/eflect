@@ -30,6 +30,9 @@ java_library(
   deps = [
     "//protos/sample:sample_java_protos",
   ],
+  exports = [
+    "//protos/sample:sample_java_protos",
+  ],
 )
 
 genrule(

@@ -19,6 +19,7 @@ java_binary(
   visibility = ["//visibility:public"],
   main_class = "eflect.testing.FakeEflect",
   runtime_deps = [
-    ":fake_eflect"
+    ":fake_eflect",
+    "@com_google_protobuf//:protobuf_java",
   ]
 )

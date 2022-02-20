@@ -4,7 +4,6 @@ package eflect.protos.sample;
 
 import "protos/sample/jiffies.proto";
 import "protos/sample/rapl.proto";
-import "protos/sample/battery_manager.proto";
 
 option java_multiple_files = true;
 option java_package = "eflect.protos.sample";

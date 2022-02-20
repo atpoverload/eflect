@@ -9,12 +9,20 @@ java_library(
     "//java/eflect/sample:jiffies",
     "//java/eflect/sample:rapl",
     "//java/eflect/util:logger",
-    "//protos/sample:sample_java_protos",
   ],
   exports = [
     "//java/eflect/sample",
     "//java/eflect/sample:jiffies",
     "//java/eflect/sample:rapl",
     "//java/eflect/util:logger",
+  ]
+)
+
+java_binary(
+  name = "dry_run",
+  main_class = "eflect.Eflect",
+  visibility = ["//visibility:public"],
+  runtime_deps = [
+    ":eflect",
   ]
 )

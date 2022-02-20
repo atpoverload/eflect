@@ -29,7 +29,6 @@ public final class Eflect {
 
   private static ScheduledExecutorService executor;
   private static Eflect instance;
-  private static Context ctx;
 
   /** Creates an instance of the underlying class if it hasn't been created yet. */
   public static synchronized Eflect getInstance() {
@@ -39,24 +38,14 @@ public final class Eflect {
     return instance;
   }
 
-  /** Creates an instance of the underlying class if it hasn't been created yet. */
-  public static synchronized Eflect getInstance(Context ctx) {
-    if (instance == null) {
-      instance = new Eflect(ctx);
-      ctx = ctx;
-    }
-    return instance;
-  }
-
   private final long periodMillis;
 
   private SampleCollector collector;
 
-  private Eflect(Context ctx) {
+  private Eflect() {
     this.periodMillis =
         Long.parseLong(
             System.getProperty("eflect.period.default", Long.toString(DEFAULT_PERIOD_MS)));
-    this.ctx = ctx;
   }
 
   /** Creates and starts a new collector. If there is no executor, a new thread pool is spun-up. */
@@ -79,10 +68,9 @@ public final class Eflect {
     }
     // TODO: abstract the collector; we want to be able to switch to an online version
     collector = new SampleCollector(executor);
-    collector.start(JiffiesDataSources::sampleCpus, period);
-    // collector.start(RaplDataSources::sampleRapl, period);
-    collector.start(() -> BatteryManagerSources.sampleBatteryManager(ctx.getBatteryManager()), period);
-    collector.start(JiffiesDataSources::sampleTasks, period);
+    collector.start(JiffiesDataSources::sampleCpuStats, period);
+    collector.start(RaplDataSources::sampleRapl, period);
+    collector.start(JiffiesDataSources::sampleTaskStats, period);
   }
 
   /** Starts a collector with the default period. */
@@ -116,5 +104,24 @@ public final class Eflect {
   public void shutdown() {
     executor.shutdown();
     executor = null;
+  }
+
+  public static void main(String[] args) throws Exception {
+    final AtomicInteger counter = new AtomicInteger();
+    ScheduledExecutorService executor =
+        newScheduledThreadPool(4, r -> new Thread(r, "eflect-" + counter.getAndIncrement()));
+
+    Eflect collector = Eflect.getInstance();
+    collector.start();
+
+    for (int i = 0; i < 10; i++) {
+      Thread.sleep(100);
+    }
+
+    collector.stop();
+
+    System.out.println(collector.read());
+
+    executor.shutdown();
   }
 }

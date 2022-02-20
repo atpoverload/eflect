@@ -1,12 +1,13 @@
 load("@rules_java//java:defs.bzl", "java_binary")
 load("@rules_python//python:defs.bzl", "py_binary", "py_library")
-load("@eflect_py_deps//:requirements.bzl", "requirement")
+load("@eflect_client_py_deps//:requirements.bzl", "requirement")
 
 py_binary(
   name = "processing",
   srcs = ["processing.py"],
   visibility = ["//visibility:public"],
   deps = [
+    "//protos/sample:sample_py_protos",
     requirement("numpy"),
     requirement("pandas"),
   ]
@@ -17,9 +18,9 @@ java_binary(
   main_class = "eflect.Client",
   srcs = ["Client.java"],
   deps = [
-    "//protos/sample:sample_java_grpc",
-    "//protos/sample:sample_java_protos",
-    "@io_grpc_grpc_java//api",
+    # "//protos/sample:sample_java_protos",
+    "//protos/sample:sampler_java_grpc",
+    # "@io_grpc_grpc_java//api",
   ]
 )
 
@@ -29,8 +30,7 @@ py_binary(
   srcs = ["client.py"],
   visibility = ["//visibility:public"],
   deps = [
-    "//protos/sample:sample_py_grpc",
-    "//protos/sample:sample_py_protos",
+    "//protos/sample:sampler_py_grpc",
     requirement("grpcio"),
   ]
 )
@@ -42,8 +42,7 @@ py_binary(
   visibility = ["//visibility:public"],
   deps = [
     ":processing",
-    "//protos/sample:sample_py_grpc",
-    "//protos/sample:sample_py_protos",
+    "//protos/sample:sampler_py_grpc",
     requirement("grpcio"),
   ]
 )

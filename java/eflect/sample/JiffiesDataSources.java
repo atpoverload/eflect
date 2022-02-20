@@ -1,10 +1,10 @@
 package eflect.sample;
 
-import eflect.protos.sample.CpuSample;
-import eflect.protos.sample.CpuStat;
+import eflect.protos.sample.CpuStatReading;
+import eflect.protos.sample.CpuStatSample;
 import eflect.protos.sample.Sample;
-import eflect.protos.sample.TaskSample;
-import eflect.protos.sample.TaskStat;
+import eflect.protos.sample.TaskStatReading;
+import eflect.protos.sample.TaskStatSample;
 import eflect.util.LoggerUtil;
 import java.io.BufferedReader;
 import java.io.File;
@@ -21,22 +21,22 @@ public final class JiffiesDataSources {
   private static final long PID = ProcessHandle.current().pid();
 
   /** Reads the cpu's stats and returns a sample from it. */
-  public static Sample sampleCpus() {
+  public static Sample sampleCpuStats() {
     return Sample.newBuilder()
         .setCpu(CpuSource.readCpuStats().setTimestamp(Instant.now().toEpochMilli()))
         .build();
   }
 
   /** Reads from a process's task directory and returns a sample from it. */
-  public static Sample sampleTasks(long pid) {
+  public static Sample sampleTaskStats(long pid) {
     return Sample.newBuilder()
         .setTask(TaskSource.readTaskStats(pid).setTimestamp(Instant.now().toEpochMilli()))
         .build();
   }
 
   /** Reads this application's thread's stat files and returns a timestamped sample. */
-  public static Sample sampleTasks() {
-    return sampleTasks(PID);
+  public static Sample sampleTaskStats() {
+    return sampleTaskStats(PID);
   }
 
   /** Wrapper around /proc/stat. */
@@ -66,7 +66,7 @@ public final class JiffiesDataSources {
     }
 
     /** Reads the system's stat file and returns individual cpus. */
-    public static String[] readCpus() {
+    private static String[] readCpus() {
       String[] stats = new String[CPU_COUNT];
       try (BufferedReader reader = Files.newBufferedReader(Path.of(SYSTEM_STAT_FILE))) {
         reader.readLine(); // first line is total summary; we need by cpu
@@ -81,15 +81,15 @@ public final class JiffiesDataSources {
     }
 
     /** Turns task stat strings into a Sample. */
-    private static CpuSample.Builder readCpuStats() {
-      CpuSample.Builder sample = CpuSample.newBuilder();
+    private static CpuStatSample.Builder readCpuStats() {
+      CpuStatSample.Builder sample = CpuStatSample.newBuilder();
       for (String statString : readCpus()) {
         String[] stat = statString.split(" ");
         if (stat.length != 11) {
           continue;
         }
-        sample.addStat(
-            CpuStat.newBuilder()
+        sample.addReading(
+            CpuStatReading.newBuilder()
                 .setCpu(Integer.parseInt(stat[CpuIndex.CPU.index].substring(3)))
                 .setUser(Integer.parseInt(stat[CpuIndex.USER.index]))
                 .setNice(Integer.parseInt(stat[CpuIndex.NICE.index]))
@@ -153,8 +153,8 @@ public final class JiffiesDataSources {
     }
 
     /** Turns task stat strings into a Sample. */
-    private static TaskSample.Builder readTaskStats(long pid) {
-      TaskSample.Builder sample = TaskSample.newBuilder();
+    private static TaskStatSample.Builder readTaskStats(long pid) {
+      TaskStatSample.Builder sample = TaskStatSample.newBuilder();
       readTasks(pid)
           .forEach(
               statString -> {
@@ -162,8 +162,8 @@ public final class JiffiesDataSources {
                 if (stat.length >= STAT_LENGTH) {
                   // task name can be space-delimited, so there may be extra entries
                   int offset = stat.length - STAT_LENGTH;
-                  sample.addStat(
-                      TaskStat.newBuilder()
+                  sample.addReading(
+                      TaskStatReading.newBuilder()
                           .setTaskId(Integer.parseInt(stat[TaskIndex.TID.index]))
                           // .setName(getName(stat, offset))
                           .setCpu(Integer.parseInt(stat[TaskIndex.CPU.index + offset]))
