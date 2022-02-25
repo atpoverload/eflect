@@ -6,7 +6,7 @@ fn main() -> std::io::Result<()> {
             "protos/sample/jiffies.proto",
             "protos/sample/rapl.proto",
             "protos/sample/sample.proto",
-            "protos/sample/sampler.proto"
+            "protos/sampler/sampler.proto"
         ], &["."])?;
     Ok(())
 }

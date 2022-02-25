@@ -9,15 +9,13 @@ import grpc
 
 from processing import compute_footprint
 from protos.sample.sample_pb2 import DataSet
-from protos.sample.sampler_pb2 import ReadRequest, StartRequest, StopRequest
-from protos.sample.sampler_pb2_grpc import SamplerStub
+from protos.sampler.sampler_pb2 import ReadRequest, StartRequest, StopRequest
+from protos.sampler.sampler_pb2_grpc import SamplerStub
 
 def parse_args():
     """ Parses client-side arguments. """
     parser = ArgumentParser()
     parser.add_argument(
-        # '-f',
-        # '--file',
         dest='file',
         nargs='*',
         default=None,
