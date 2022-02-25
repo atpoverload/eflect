@@ -21,11 +21,14 @@ use log::{LevelFilter, error, info, warn};
 use procfs::{CpuTime, KernelStats, ProcError};
 use procfs::process::{Process, Stat};
 
+use nvml_wrapper::NVML;
+
 use tonic::{Request, Response, Status};
 use tonic::transport::Server;
 
 use protos::Sample;
 use protos::{CpuStatSample, CpuStatReading};
+use protos::{NvmlSample, NvmlReading};
 use protos::{RaplSample, RaplReading};
 use protos::{TaskStatSample, TaskStatReading};
 use protos::{DataSet, StartRequest, StartResponse, StopRequest, StopResponse, ReadRequest, ReadResponse, sample::Data};
@@ -41,8 +44,13 @@ fn now_ms() -> u64 {
 // TODO(timur): make real error handling
 //  - rapl doesn't exist
 //  - the process dies
-struct SamplingError {
-    message: String
+// struct SamplingError {
+//     message: String
+// }
+
+enum SamplingError {
+    NotRetryable(String),
+    Retryable
 }
 
 // code to sample /proc/stat
@@ -56,7 +64,8 @@ fn sample_cpus() -> Result<Sample, SamplingError> {
             s.data = Some(Data::Cpu(sample));
             Ok(s)
         },
-        _ => Err(SamplingError{message: "there was an error with proc".to_string()})
+        Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::NotRetryable("/proc/stat".to_string())),
+        _ => Err(SamplingError::Retryable)
     }
 }
 
@@ -98,15 +107,17 @@ fn cpu_stat_to_proto(cpu: u32, stat: CpuTime) -> CpuStatReading {
 
 // code to sample /proc/[pid]/task/[tid]/stat
 fn sample_tasks(pid: i32) -> Result<Sample, SamplingError> {
-    if let Ok(tasks) = read_tasks(pid) {
-        let mut sample = TaskStatSample::default();
-        sample.timestamp = now_ms();
-        tasks.into_iter().for_each(|s| sample.reading.push(s));
-        let mut s = Sample::default();
-        s.data = Some(Data::Task(sample));
-        Ok(s)
-    } else {
-        Err(SamplingError{message: "there was an error with proc".to_string()})
+    match read_tasks(pid) {
+        Ok(tasks) => {
+            let mut sample = TaskStatSample::default();
+            sample.timestamp = now_ms();
+            tasks.into_iter().for_each(|s| sample.reading.push(s));
+            let mut s = Sample::default();
+            s.data = Some(Data::Task(sample));
+            Ok(s)
+        }
+        Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::NotRetryable(format!("/proc/{}/task", pid))),
+        _ => Err(SamplingError::Retryable)
     }
 }
 
@@ -131,28 +142,30 @@ fn task_stat_to_proto(stat: Stat) -> TaskStatReading {
 
 // code to sample /sys/class/powercap
 fn sample_rapl() -> Result<Sample, SamplingError> {
-    if let Ok(reading) = read_rapl() {
-        let mut sample = RaplSample::default();
-        sample.timestamp = now_ms();
-        reading.into_iter().for_each(|reading| sample.reading.push(reading));
-        let mut s = Sample::default();
-        s.data = Some(Data::Rapl(sample));
-        Ok(s)
-    } else {
-        Err(SamplingError{message: "there was an error reading /sys/class/powercap".to_string()})
-    }
+    let readings = read_rapl()?;
+    let mut sample = RaplSample::default();
+    sample.timestamp = now_ms();
+    readings.into_iter().for_each(|reading| sample.reading.push(reading));
+    let mut s = Sample::default();
+    s.data = Some(Data::Rapl(sample));
+    Ok(s)
 }
 
+static POWERCAP_PATH: &str = "/sys/class/powercap";
 // TODO(timur): implement handling for N domains
 fn read_rapl() -> Result<Vec<RaplReading>, SamplingError> {
-    let readings: Vec<RaplReading> = (0..2)
-        .map(read_socket)
-        .filter_map(Result::ok)
-        .collect();
-    if !readings.is_empty() {
-        Ok(readings)
-    } else {
-        Err(SamplingError{message: "there was an error reading /sys/class/powercap".to_string()})
+    match fs::read_dir(POWERCAP_PATH) {
+        Ok(components) => Ok(components
+            .filter_map(|e| e.unwrap().file_name().into_string().ok())
+            .filter(|f| f.contains("intel-rapl") && f.matches(":").count() == 1)
+            .map(|f| read_socket(f.split(":").nth(1).unwrap().parse().unwrap()))
+            .filter_map(Result::ok)
+            .collect()),
+        Err(e) => match e.kind() {
+            io::ErrorKind::PermissionDenied | io::ErrorKind::NotFound =>
+                Err(SamplingError::NotRetryable(format!("{:?} could not be loaded: {:?}", POWERCAP_PATH.to_string(), e))),
+            _ => Err(SamplingError::Retryable),
+        }
     }
 }
 
@@ -160,13 +173,34 @@ fn read_rapl() -> Result<Vec<RaplReading>, SamplingError> {
 fn read_socket(socket: u32) -> Result<RaplReading, io::Error> {
     let mut reading = RaplReading::default();
     reading.socket = socket;
-    reading.package = Some(parse_rapl_energy(format!("/sys/class/powercap/intel-rapl:{}/energy_uj", socket))?);
-    reading.dram = Some(parse_rapl_energy(format!("/sys/class/powercap/intel-rapl:{}:0/energy_uj", socket))?);
+    reading.package = Some(parse_rapl_energy(format!("{}/intel-rapl:{}/energy_uj", POWERCAP_PATH, socket))?);
+    reading.dram = Some(parse_rapl_energy(format!("{}/intel-rapl:{}:0/energy_uj", POWERCAP_PATH, socket))?);
     Ok(reading)
 }
 
 fn parse_rapl_energy(rapl_energy_file: String) -> Result<u64, io::Error> {
     Ok(fs::read_to_string(rapl_energy_file)?.trim().parse().unwrap())
+}
+
+// code to sample nvml
+fn sample_nvml() -> Result<Sample, SamplingError> {
+    match NVML::init() {
+        Ok(nvml) => {
+            // TODO(timur): how many devices do we examine?
+            let device = nvml.device_by_index(0).unwrap();
+            let mut reading = NvmlReading::default();
+            reading.bus_id = device.pci_info().unwrap().bus_id;
+            reading.power_usage = Some(device.power_usage().unwrap());
+            let mut sample = NvmlSample::default();
+            sample.timestamp = now_ms();
+            sample.reading.push(reading);
+            let mut s = Sample::default();
+            s.data = Some(Data::Nvml(sample));
+            Ok(s)
+        },
+        // TODO(timur): there are a handful of cases we should catch. how do we break this up?
+        Err(e) => Err(SamplingError::NotRetryable(format!("{:?}", e))),
+    }
 }
 
 #[cfg(test)]
@@ -253,7 +287,11 @@ impl SamplerImpl {
                     match source() {
                         Ok(sample) => sender.lock().unwrap().send(sample).unwrap(),
                         // TODO(timur): we need to be able to abandon this if the source is broken
-                        Err(error) => error!("{}", error.message),
+                        Err(SamplingError::NotRetryable(message)) => {
+                            error!("there was an error with a source that cannot be retried: {}", message);
+                            break;
+                        },
+                        Err(SamplingError::Retryable) => error!("there was an error with a source that will be retried"),
                     };
                     thread::sleep(period - (Instant::now() - start));
                 }
@@ -287,6 +325,7 @@ impl Sampler for SamplerImpl {
             self.is_running.store(true, Ordering::Relaxed);
 
             self.start_sampling_from(sample_cpus);
+            self.start_sampling_from(sample_nvml);
             self.start_sampling_from(sample_rapl);
             self.start_sampling_from(move || sample_tasks(pid));
         } else {

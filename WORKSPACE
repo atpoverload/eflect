@@ -7,28 +7,28 @@ load("eflect_deps.bzl", "eflect_java_deps")
 eflect_java_deps()
 
 # deps for python client
-# load("eflect_deps.bzl", "eflect_python_deps")
-# eflect_python_deps()
-http_archive(
-  name = "rules_python",
-  sha256 = "09a3c4791c61b62c2cbc5b2cbea4ccc32487b38c7a2cc8f87a794d7a659cc742",
-  strip_prefix = "rules_python-740825b7f74930c62f44af95c9a4c1bd428d2c53",
-  url = "https://github.com/bazelbuild/rules_python/archive/740825b7f74930c62f44af95c9a4c1bd428d2c53.zip",
-)
-
-http_archive(
-  name = "com_google_protobuf",
-  sha256 = "3bd7828aa5af4b13b99c191e8b1e884ebfa9ad371b0ce264605d347f135d2568",
-  strip_prefix = "protobuf-3.19.4",
-  urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.19.4.tar.gz"],
-)
-
-http_archive(
-    name = "rules_proto_grpc",
-    sha256 = "507e38c8d95c7efa4f3b1c0595a8e8f139c885cb41a76cab7e20e4e67ae87731",
-    strip_prefix = "rules_proto_grpc-4.1.1",
-    urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/4.1.1.tar.gz"],
-)
+load("eflect_deps.bzl", "eflect_python_deps")
+eflect_python_deps()
+# http_archive(
+#   name = "rules_python",
+#   sha256 = "09a3c4791c61b62c2cbc5b2cbea4ccc32487b38c7a2cc8f87a794d7a659cc742",
+#   strip_prefix = "rules_python-740825b7f74930c62f44af95c9a4c1bd428d2c53",
+#   url = "https://github.com/bazelbuild/rules_python/archive/740825b7f74930c62f44af95c9a4c1bd428d2c53.zip",
+# )
+#
+# http_archive(
+#   name = "com_google_protobuf",
+#   sha256 = "3bd7828aa5af4b13b99c191e8b1e884ebfa9ad371b0ce264605d347f135d2568",
+#   strip_prefix = "protobuf-3.19.4",
+#   urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.19.4.tar.gz"],
+# )
+#
+# http_archive(
+#     name = "rules_proto_grpc",
+#     sha256 = "507e38c8d95c7efa4f3b1c0595a8e8f139c885cb41a76cab7e20e4e67ae87731",
+#     strip_prefix = "rules_proto_grpc-4.1.1",
+#     urls = ["https://github.com/rules-proto-grpc/rules_proto_grpc/archive/4.1.1.tar.gz"],
+# )
 
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_toolchains", "rules_proto_grpc_repos")
 rules_proto_grpc_toolchains()

@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package eflect.protos.sample;
+
+option java_multiple_files = true;
+option java_package = "eflect.protos.sample";
+
+message BatteryManagerReading {
+    required uint64 battery_property_energy_counter = 1;
+}
+
+message BatteryManagerSample {
+    required uint64 timestamp = 1;
+    repeated BatteryManagerReading reading = 2;
+}

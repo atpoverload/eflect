@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package eflect.protos.sample;
+
+option java_multiple_files = true;
+option java_package = "eflect.protos.sample";
+
+message NvmlReading {
+  required string bus_id = 1;
+  optional uint32 power_usage = 2;
+}
+
+message NvmlSample {
+  required uint64 timestamp = 1;
+  repeated NvmlReading reading = 2;
+}
