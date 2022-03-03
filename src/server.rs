@@ -34,6 +34,10 @@ use protos::{TaskStatSample, TaskStatReading};
 use protos::{DataSet, StartRequest, StartResponse, StopRequest, StopResponse, ReadRequest, ReadResponse, sample::Data};
 use protos::sampler_server::{Sampler, SamplerServer};
 
+// TODO(timur): get rid of this hack for wsl
+use std::process::Command;
+use std::process::Stdio;
+
 fn now_ms() -> u64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
@@ -44,10 +48,6 @@ fn now_ms() -> u64 {
 // TODO(timur): make real error handling
 //  - rapl doesn't exist
 //  - the process dies
-// struct SamplingError {
-//     message: String
-// }
-
 enum SamplingError {
     NotRetryable(String),
     Retryable
@@ -64,7 +64,7 @@ fn sample_cpus() -> Result<Sample, SamplingError> {
             s.data = Some(Data::Cpu(sample));
             Ok(s)
         },
-        Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::NotRetryable("/proc/stat".to_string())),
+        Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::NotRetryable(format!("/proc/stat could not be read"))),
         _ => Err(SamplingError::Retryable)
     }
 }
@@ -116,7 +116,7 @@ fn sample_tasks(pid: i32) -> Result<Sample, SamplingError> {
             s.data = Some(Data::Task(sample));
             Ok(s)
         }
-        Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::NotRetryable(format!("/proc/{}/task", pid))),
+        Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::NotRetryable(format!("/proc/{}/task could not be read", pid))),
         _ => Err(SamplingError::Retryable)
     }
 }
@@ -163,7 +163,7 @@ fn read_rapl() -> Result<Vec<RaplReading>, SamplingError> {
             .collect()),
         Err(e) => match e.kind() {
             io::ErrorKind::PermissionDenied | io::ErrorKind::NotFound =>
-                Err(SamplingError::NotRetryable(format!("{:?} could not be loaded: {:?}", POWERCAP_PATH.to_string(), e))),
+                Err(SamplingError::NotRetryable(format!("{} could not be read: {:?}", POWERCAP_PATH.to_string(), e))),
             _ => Err(SamplingError::Retryable),
         }
     }
@@ -182,7 +182,7 @@ fn parse_rapl_energy(rapl_energy_file: String) -> Result<u64, io::Error> {
     Ok(fs::read_to_string(rapl_energy_file)?.trim().parse().unwrap())
 }
 
-// code to sample nvml
+// code to sample nvml; completely untested
 fn sample_nvml() -> Result<Sample, SamplingError> {
     match NVML::init() {
         Ok(nvml) => {
@@ -201,6 +201,37 @@ fn sample_nvml() -> Result<Sample, SamplingError> {
         // TODO(timur): there are a handful of cases we should catch. how do we break this up?
         Err(e) => Err(SamplingError::NotRetryable(format!("{:?}", e))),
     }
+}
+
+// TODO(timur): get rid of this hack for wsl
+fn sample_nvidia_smi() -> Result<Sample, SamplingError> {
+    let proc = Command::new("nvidia-smi.exe")
+                .args([
+                    "--query-gpu=timestamp,pci.bus_id,power.draw",
+                    "--format=csv",
+                    "--loop-ms",
+                    "4",
+                ]).stdout(Stdio::piped()).output().unwrap();
+
+    let mut sample = NvmlSample::default();
+    String::from_utf8(proc.stdout).unwrap().lines().skip(1).for_each(|l| {
+        let components: Vec<&str> = l.split(",").collect();
+        let mut reading = NvmlReading::default();
+        reading.bus_id = components[1].to_string().trim().to_string();
+
+        // isolating this because it was being frustrating
+        let mut power = components[2].to_string();
+        power.pop();
+        let power: f32 = power.trim().parse().unwrap();
+        let power: u32 = (1000.0 * power) as u32;
+        reading.power_usage = Some(power);
+        sample.reading.push(reading)
+    });
+    sample.timestamp = now_ms();
+
+    let mut s = Sample::default();
+    s.data = Some(Data::Nvml(sample));
+    Ok(s)
 }
 
 #[cfg(test)]
@@ -293,7 +324,9 @@ impl SamplerImpl {
                         },
                         Err(SamplingError::Retryable) => error!("there was an error with a source that will be retried"),
                     };
-                    thread::sleep(period - (Instant::now() - start));
+
+                    let now = Instant::now() - start;
+                    if period > now { thread::sleep(period - now); }
                 }
         });
     }
@@ -303,7 +336,7 @@ impl Default for SamplerImpl {
     fn default() -> SamplerImpl {
         let (tx, rx) = channel::<Sample>();
         SamplerImpl {
-            period: Duration::from_millis(100),
+            period: Duration::from_millis(50),
             is_running: Arc::new(AtomicBool::new(false)),
             sender: Arc::new(Mutex::new(tx)),
             receiver: Arc::new(Mutex::new(rx)),
@@ -325,9 +358,12 @@ impl Sampler for SamplerImpl {
             self.is_running.store(true, Ordering::Relaxed);
 
             self.start_sampling_from(sample_cpus);
-            self.start_sampling_from(sample_nvml);
+            // self.start_sampling_from(sample_nvml);
             self.start_sampling_from(sample_rapl);
             self.start_sampling_from(move || sample_tasks(pid));
+
+            // TODO(timur): get rid of this hack for wsl
+            self.start_sampling_from(sample_nvidia_smi);
         } else {
             warn!("ignoring start request while collecting");
         }
@@ -355,8 +391,9 @@ impl Sampler for SamplerImpl {
             while let Ok(sample) = receiver.try_recv() {
                 match sample.data {
                     Some(Data::Cpu(sample)) => data.cpu.push(sample),
-                    Some(Data::Task(sample)) => data.task.push(sample),
+                    Some(Data::Nvml(sample)) => data.nvml.push(sample),
                     Some(Data::Rapl(sample)) => data.rapl.push(sample),
+                    Some(Data::Task(sample)) => data.task.push(sample),
                     _ => log::warn!("no sample found!")
                 }
             }
