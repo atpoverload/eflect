@@ -17,27 +17,49 @@ def parse_args():
     parser.add_argument(
         dest='command',
         choices=['start', 'stop', 'read'],
-        help='request to make'
+        help='request to make',
     )
     parser.add_argument(
         '--pid',
         dest='pid',
         type=int,
-        required=True,
-        help='pid to be monitored'
+        default=-1,
+        help='pid to be monitored',
+    )
+    parser.add_argument(
+        '--addr',
+        dest='addr',
+        type=str,
+        default='[::1]:50051',
+        help='address of the eflect server',
     )
     return parser.parse_args()
+
+class EflectClient:
+    def __init__(self, addr):
+        self.stub = SamplerStub(grpc.insecure_channel(addr))
+
+    def start(self, pid):
+        self.stub.Start(StartRequest(pid=pid))
+
+    def stop(self):
+        self.stub.Stop(StopRequest())
+
+    def read(self):
+        return self.stub.Read(ReadRequest())
 
 def main():
     args = parse_args()
 
-    stub = SamplerStub(grpc.insecure_channel('[::1]:50051'))
+    client = EflectClient(args.addr)
     if args.command == 'start':
-        stub.Start(StartRequest(pid=args.pid))
+        if args.pid < 0:
+            raise Exception('the pid to monitor must be non-negative ({})'.format(args.pid))
+        client.start(args.pid)
     elif args.command == 'stop':
-        stub.Stop(StopRequest(pid=args.pid))
+        client.stop()
     elif args.command == 'read':
-        print(stub.Read(ReadRequest(pid=args.pid)))
+        print(client.read())
 
 if __name__ == '__main__':
     main()

@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 
 import grpc
 
-from processing import compute_footprint
+from client import EflectClient
 from protos.sample.sample_pb2 import DataSet
 from protos.sampler.sampler_pb2 import ReadRequest, StartRequest, StopRequest
 from protos.sampler.sampler_pb2_grpc import SamplerStub
@@ -19,27 +19,34 @@ def parse_args():
         dest='file',
         nargs='*',
         default=None,
-        help='name of file to be profiled'
+        help='name of file to be profiled',
     )
     parser.add_argument(
         '-c',
         '--code',
         dest='code',
         default=None,
-        help='code to be profiled'
+        help='code to be profiled',
     )
     parser.add_argument(
         '-d',
         '--data',
         dest='data',
         default=None,
-        help='path to write the data set in profiling mode; path of the data set otherwise'
+        help='path to write the data set in profiling mode; path of the data set otherwise',
+    )
+    parser.add_argument(
+        '--addr',
+        dest='addr',
+        type=str,
+        default='[::1]:50051',
+        help='address of the eflect server',
     )
     parser.add_argument(
         '--process',
         dest='process',
         action='store_true',
-        help='whether or not to process the raw data'
+        help='whether or not to process the raw data',
     )
     args = parser.parse_args()
 
@@ -59,43 +66,31 @@ def parse_args():
     else:
         args.workload = None
 
-    if args.workload is None and args.data is None:
-        raise RuntimeError('one of --file, --code, or --data must be provided!')
+    if args.workload is None:
+        raise RuntimeError('one of --file or --code must be provided!')
 
     return args
+
+def run_workload(workload, client):
+    print('starting eflect monitoring of workload')
+    client.start(os.getpid())
+    workload()
+    client.stop()
+    print('stopped eflect monitoring of workload')
 
 def main():
     args = parse_args()
 
-    if args.workload is not None:
-        workload = args.workload[0]
-        # tell eflect to monitor our runtime
-        stub = SamplerStub(grpc.insecure_channel('[::1]:50051'))
+    client = EflectClient(args.addr)
 
-        print('starting eflect monitoring of workload')
-        stub.Start(StartRequest(pid=os.getpid()))
-        workload()
-        stub.Stop(StopRequest())
-        print('stopped eflect monitoring of workload')
+    workload = args.workload[0]
+    run_workload(workload, client)
+    data = client.read().data
 
-        data = stub.Read(ReadRequest()).data
-
-        path = args.data if args.data is not None else 'eflect-data.pb'
-        with open(path, 'wb') as f:
-            f.write(data.SerializeToString())
-        print('wrote data to {}'.format(path))
-    else:
-        # load in an existing data_set
-        with open(args.data, 'rb') as f:
-            data = DataSet()
-            data.ParseFromString(f.read())
-        print('loaded data from {}'.format(args.data))
-
-    if args.process:
-        path = os.path.join(os.path.dirname(path), 'eflect-footprint.csv')
-        footprint = compute_footprint(data)
-        footprint.to_csv(path)
-        print('wrote footprint to {}'.format(path))
+    path = args.data if args.data is not None else 'eflect-data.pb'
+    with open(path, 'wb') as f:
+        f.write(data.SerializeToString())
+    print('wrote data to {}'.format(path))
 
 if __name__ == '__main__':
     main()

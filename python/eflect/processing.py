@@ -181,9 +181,44 @@ def rapl_samples_to_df(samples):
     """ Converts a collection of RaplSamples to a processed DataFrame. """
     return process_rapl_data(parse_rapl_samples(samples))
 
+# nvml processing
+def parse_nvml_samples(samples):
+    """ Converts a collection of RaplSamples to a DataFrame. """
+    records = []
+    for sample in samples:
+        for reading in sample.reading:
+            records.append([
+                sample.timestamp,
+                reading.bus_id,
+                reading.power_usage,
+            ])
+    df = pd.DataFrame(records)
+    df.columns = [
+        'timestamp',
+        'bus_id',
+        'power_usage',
+    ]
+    df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
+    return df
+
+def process_nvml_data(df):
+    """ Computes the power of each 50ms bucket """
+    df.timestamp = bucket_timestamps(df.timestamp)
+    df = df.groupby(['timestamp', 'bus_id']).min()
+
+    energy, ts = max_rolling_difference(df.unstack())
+    energy = energy.stack().stack().apply(maybe_apply_wrap_around)
+    energy = energy.groupby(['timestamp', 'bus_id']).sum().div(ts, axis = 0)
+
+    return energy
+
+def nvml_samples_to_df(samples):
+    """ Converts a collection of NvmlSamples to a processed DataFrame. """
+    return process_nvml_data(parse_nvml_samples(samples))
+
 # accounting
 # TODO(timur): find out if there's a general conversion formula
-DOMAIN_CONVERSION = lambda x: 0 if int(x) < 20 else 1
+RAPL_DOMAIN_CONVERSION = lambda x: 0 if int(x) < 20 else 1
 
 def account_jiffies(task, cpu):
     """ Returns the ratio of the jiffies with a correction for overaccounting. """
@@ -195,7 +230,7 @@ def account_jiffies(task, cpu):
 def account_rapl_energy(activity, rapl):
     """ Returns the product of the energy and the cpu-aligned activity data. """
     activity = activity.reset_index()
-    activity['socket'] = activity.cpu.apply(DOMAIN_CONVERSION)
+    activity['socket'] = activity.cpu.apply(RAPL_DOMAIN_CONVERSION)
     activity = activity.set_index(['timestamp', 'id', 'socket'])['activity']
 
     rapl = rapl_samples_to_df(rapl)
@@ -205,22 +240,49 @@ def account_rapl_energy(activity, rapl):
     try:
         df = rapl * activity
     except:
+        print('rapl data could not be directly aligned; forcing a merge instead')
         activity = activity.reset_index()
-        rapl_energy = rapl_energy.reset_index()
-        df = pd.merge(activity, rapl_energy, on=['timestamp', 'socket'])
+        rapl = rapl.reset_index()
+        df = pd.merge(activity, rapl, on=['timestamp', 'socket'])
         df[0] = df['0_x'] * df['0_y']
         df = df.set_index(['timestamp', 'id', 'component', 'socket'])[0]
 
     return df.reset_index().set_index(['timestamp', 'id', 'component', 'socket'])
 
+def account_nvml_energy(activity, nvml):
+    """ Returns the product of the energy and the cpu-aligned activity data. """
+    activity = activity.groupby(['timestamp', 'id']).sum()
+
+    nvml = nvml_samples_to_df(nvml)
+
+    # TODO(timur): we should just be able to take the product but the axis
+    #   misalignment causes it to fail sometimes
+    try:
+        df = nvml * activity
+    except:
+        print('nvml data could not be directly aligned; forcing a merge instead')
+        activity = activity.reset_index()
+        nvml = nvml.reset_index()
+        df = pd.merge(activity, nvml, on=['timestamp'])
+        df[0] = df['0_x'] * df['0_y']
+        df = df.set_index(['timestamp', 'id'])[0]
+
+    return df.reset_index().set_index(['timestamp', 'id'])
+
 def compute_footprint(data):
     """ Produces an energy footprint from the data set. """
     # TODO(timur): we need a summary proto for this
-    df = account_jiffies(data.task, data.cpu)
-    df.name = 'activity'
+    activity = account_jiffies(data.task, data.cpu)
+    activity.name = 'activity'
+    footprints = {'activity': activity}
+
     if len(data.rapl) > 0:
-        df = account_rapl_energy(df, data.rapl)
-    return df
+        footprints['rapl'] = account_rapl_energy(activity, data.rapl)
+
+    if len(data.nvml) > 0:
+        footprints['nvml'] = account_nvml_energy(activity, data.nvml)
+
+    return footprints
 
 # cli to process globs of files
 def parse_args():
@@ -230,14 +292,14 @@ def parse_args():
         dest='files',
         nargs='*',
         default=None,
-        help='files to process'
+        help='files to process',
     )
     parser.add_argument(
         '-o',
         '--output_dir',
         dest='output',
         default=None,
-        help='path to write the data to'
+        help='path to write the processed data to',
     )
     return parser.parse_args()
 
@@ -247,7 +309,6 @@ def main():
         with open(file, 'rb') as f:
             data = DataSet()
             data.ParseFromString(f.read())
-        print(data)
 
         # TODO(timur): i hate that i did this. we need to get the footprint in the proto
         if args.output:
@@ -259,8 +320,12 @@ def main():
             path = os.path.join(args.output, os.path.splitext(os.path.basename(file))[0] + '-footprint.csv')
         else:
             path = os.path.splitext(file)[0] + '-footprint.csv'
-        compute_footprint(data).to_csv(path)
-        print('wrote footprint for data set {} at {}'.format(file, path))
+        df = compute_footprint(data)
+
+        print(df['nvml'].groupby('id').sum()[0].sort_values().tail(15))
+
+        # df.to_csv(path)
+        # print('wrote footprint for data set {} at {}'.format(file, path))
 
 if __name__ == '__main__':
     main()

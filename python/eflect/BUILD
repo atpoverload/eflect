@@ -13,7 +13,7 @@ py_binary(
 )
 
 py_binary(
-  name = "py_client",
+  name = "client",
   main = "client.py",
   srcs = ["client.py"],
   visibility = ["//visibility:public"],
@@ -23,7 +23,7 @@ py_binary(
 )
 
 py_binary(
-  name = "py_harness",
+  name = "harness",
   main = "harness.py",
   srcs = [
     "harness.py",
@@ -32,7 +32,6 @@ py_binary(
   visibility = ["//visibility:public"],
   deps = [
     "//protos/sampler:sampler_py_grpc",
-    requirement("numpy"),
-    requirement("pandas"),
+    ":client",
   ]
 )

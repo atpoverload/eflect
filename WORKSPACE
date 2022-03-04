@@ -74,7 +74,7 @@ rules_proto_toolchains()
 load("@rules_python//python:pip.bzl", "pip_install")
 pip_install(
    name = "eflect_client_py_deps",
-   requirements = "//client:requirements.txt",
+   requirements = "//python/eflect:requirements.txt",
 )
 #
 # # deps for grpc

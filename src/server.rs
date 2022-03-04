@@ -10,11 +10,14 @@ use std::io;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Sender, Receiver, channel};
-use std::vec::Vec;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime};
+use std::vec::Vec;
+
+use clap::App;
 
 use env_logger;
+
 use log;
 use log::{LevelFilter, error, info, warn};
 
@@ -205,7 +208,7 @@ fn sample_nvml() -> Result<Sample, SamplingError> {
 
 // TODO(timur): get rid of this hack for wsl
 fn sample_nvidia_smi() -> Result<Sample, SamplingError> {
-    let proc = Command::new("nvidia-smi.exe")
+    let proc = Command::new("nvidia-smi")
                 .args([
                     "--query-gpu=timestamp,pci.bus_id,power.draw",
                     "--format=csv",
@@ -291,6 +294,24 @@ mod tests {
             };
         } else {
             panic!("sampling rapl failed; /sys/class/powercap couldn't be read");
+        };
+    }
+
+    #[test]
+    // make sure we have nvml (libnvidia-ml.so) and that we read all the values
+    fn nvml_smoke_test() {
+        let start = now_ms();
+        if let Ok(sample) = sample_nvml() {
+            if let Some(Data::Nvml(sample)) = sample.data {
+                assert!(sample.timestamp <= now_ms());
+                assert!(sample.timestamp >= start);
+                // TODO(timur): have to check for components
+                // assert_eq!(sample.stat.len(), CpuInfo::new().unwrap().num_cores());
+            } else {
+                panic!("sampling nvml failed; data other than NvmlSample returned");
+            };
+        } else {
+            panic!("sampling nvml failed; libnvidia-ml.so could not be found");
         };
     }
 }
@@ -410,11 +431,13 @@ impl Sampler for SamplerImpl {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::builder().filter_level(LevelFilter::Info).init();
-    let addr = "[::1]:50051".parse().unwrap();
-    let sampler = SamplerImpl::default();
-
+    let matches = App::new("eflect")
+        .arg_from_usage("--addr=<address> 'The address to host the eflect server'")
+        .get_matches();
+    let addr = matches.value_of("addr").unwrap().parse().unwrap();
     info!("eflect listening on {}", addr);
 
+    let sampler = SamplerImpl::default();
     Server::builder()
         .add_service(SamplerServer::new(sampler))
         .serve(addr)
