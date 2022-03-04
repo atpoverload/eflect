@@ -26,7 +26,11 @@ def main():
     tboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir = "/tmp/logs/" + datetime.now().strftime("%Y%m%d-%H%M%S"),
         histogram_freq = 1,
-        profile_batch = '500,520'
+        write_graph = False,
+        write_images = False,
+        write_steps_per_second = False,
+        update_freq = 'batch',
+        profile_batch = (500,600),
     )
 
     model.fit(x_train, y_train, epochs=5, callbacks = [tboard_callback])

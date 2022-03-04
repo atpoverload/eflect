@@ -205,12 +205,10 @@ def process_nvml_data(df):
     """ Computes the power of each 50ms bucket """
     df.timestamp = bucket_timestamps(df.timestamp)
     df = df.groupby(['timestamp', 'bus_id']).min()
+    # TODO(timur): this assumes the baseline is the smallest reading; we should do something else
+    df = df - df.groupby('bus_id').min()
 
-    energy, ts = max_rolling_difference(df.unstack())
-    energy = energy.stack().stack().apply(maybe_apply_wrap_around)
-    energy = energy.groupby(['timestamp', 'bus_id']).sum().div(ts, axis = 0)
-
-    return energy
+    return df
 
 def nvml_samples_to_df(samples):
     """ Converts a collection of NvmlSamples to a processed DataFrame. """
@@ -247,7 +245,9 @@ def account_rapl_energy(activity, rapl):
         df[0] = df['0_x'] * df['0_y']
         df = df.set_index(['timestamp', 'id', 'component', 'socket'])[0]
 
-    return df.reset_index().set_index(['timestamp', 'id', 'component', 'socket'])
+    df = df.reset_index().set_index(['timestamp', 'id', 'component', 'socket'])
+    df.name = 'power'
+    return df
 
 def account_nvml_energy(activity, nvml):
     """ Returns the product of the energy and the cpu-aligned activity data. """
@@ -264,10 +264,12 @@ def account_nvml_energy(activity, nvml):
         activity = activity.reset_index()
         nvml = nvml.reset_index()
         df = pd.merge(activity, nvml, on=['timestamp'])
-        df[0] = df['0_x'] * df['0_y']
+        df[0] = df['activity'] * df['power_usage']
         df = df.set_index(['timestamp', 'id'])[0]
 
-    return df.reset_index().set_index(['timestamp', 'id'])
+    df = df.reset_index().set_index(['timestamp', 'id'])
+    df.name = 'power'
+    return df
 
 def compute_footprint(data):
     """ Produces an energy footprint from the data set. """
