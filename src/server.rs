@@ -435,7 +435,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .arg_from_usage("--addr [address] 'The address to host the eflect server'")
         .get_matches();
 
-    let addr = matches.value_of("address").or(Some("[::1]:50051")).unwrap().parse().unwrap();
+    let addr = matches.value_of("addr").or(Some("[::1]:50051")).unwrap().parse().unwrap();
     info!("eflect listening on {}", addr);
 
     let sampler = SamplerImpl::default();
