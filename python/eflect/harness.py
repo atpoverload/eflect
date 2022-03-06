@@ -1,16 +1,11 @@
 """ a client that runs a user-defined workload monitored by an eflect server. """
 import importlib
 import os
-import time
 
 from argparse import ArgumentParser
 
-import grpc
-
 from client import EflectClient
-from protos.sample.sample_pb2 import DataSet
-from protos.sampler.sampler_pb2 import ReadRequest, StartRequest, StopRequest
-from protos.sampler.sampler_pb2_grpc import SamplerStub
+
 
 def parse_args():
     """ Parses client-side arguments. """
@@ -71,12 +66,14 @@ def parse_args():
 
     return args
 
+
 def run_workload(workload, client):
     print('starting eflect monitoring of workload')
     client.start(os.getpid())
     workload()
     client.stop()
     print('stopped eflect monitoring of workload')
+
 
 def main():
     args = parse_args()
@@ -91,6 +88,7 @@ def main():
     with open(path, 'wb') as f:
         f.write(data.SerializeToString())
     print('wrote data to {}'.format(path))
+
 
 if __name__ == '__main__':
     main()

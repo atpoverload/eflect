@@ -2,6 +2,7 @@ from datetime import datetime
 
 import tensorflow as tf
 
+
 def main():
     mnist = tf.keras.datasets.mnist
 
@@ -24,18 +25,19 @@ def main():
     )
 
     tboard_callback = tf.keras.callbacks.TensorBoard(
-        log_dir = "/tmp/logs/" + datetime.now().strftime("%Y%m%d-%H%M%S"),
-        histogram_freq = 1,
-        write_graph = False,
-        write_images = False,
-        write_steps_per_second = False,
-        update_freq = 'batch',
-        profile_batch = (500,600),
+        log_dir="/tmp/logs/" + datetime.now().strftime("%Y%m%d-%H%M%S"),
+        histogram_freq=1,
+        write_graph=False,
+        write_images=False,
+        write_steps_per_second=False,
+        update_freq='batch',
+        profile_batch=(500, 600),
     )
 
-    model.fit(x_train, y_train, epochs=5, callbacks = [tboard_callback])
+    model.fit(x_train, y_train, epochs=5, callbacks=[tboard_callback])
     # model.fit(x_train, y_train, epochs=5)
     model.evaluate(x_test,  y_test, verbose=2)
+
 
 if __name__ == '__main__':
     main()

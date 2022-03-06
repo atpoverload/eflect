@@ -11,14 +11,17 @@ from pandas import to_datetime
 from protos.sample.sample_pb2 import DataSet
 
 # processing helpers
+# TODO(timur): this is totally arbitrary. do we need metadata in the proto?
 SAMPLE_INTERVAL = '50ms'
 WINDOW_SIZE = '501ms'
+
 
 def bucket_timestamps(timestamps, sample_interval=SAMPLE_INTERVAL):
     """ Floors a series of timestamps to some interval for easy aggregates. """
     return to_datetime(timestamps).dt.floor(sample_interval)
 
-def max_rolling_difference(df, window_size = WINDOW_SIZE):
+
+def max_rolling_difference(df, window_size=WINDOW_SIZE):
     """ Computes a rolling difference of points up to the window size. """
     values = df - df.rolling(window_size).min()
 
@@ -27,6 +30,7 @@ def max_rolling_difference(df, window_size = WINDOW_SIZE):
     timestamps = timestamps - timestamps.rolling(window_size).min()
 
     return values, timestamps
+
 
 # jiffies processing
 def parse_cpu_samples(samples):
@@ -66,21 +70,26 @@ def parse_cpu_samples(samples):
     df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
     return df
 
+
 def process_cpu_data(df):
     """ Computes the cpu jiffy rate of each 50ms bucket """
-    df['jiffies'] = df.drop(columns = ['timestamp', 'cpu', 'idle', 'iowait']).sum(axis = 1)
+    df['jiffies'] = df.drop(
+        columns=['timestamp', 'cpu', 'idle', 'iowait']).sum(axis=1)
     df.timestamp = bucket_timestamps(df.timestamp)
 
-    jiffies, ts = max_rolling_difference(df.groupby(['timestamp', 'cpu']).jiffies.min().unstack())
+    jiffies, ts = max_rolling_difference(df.groupby(
+        ['timestamp', 'cpu']).jiffies.min().unstack())
     jiffies = jiffies.stack().reset_index()
     jiffies = jiffies.groupby(['timestamp', 'cpu']).sum().unstack()
-    jiffies = jiffies.div(ts, axis = 0).stack()
+    jiffies = jiffies.div(ts, axis=0).stack()
 
     return jiffies[0]
+
 
 def cpu_samples_to_df(samples):
     """ Converts a collection of CpuSamples to a processed DataFrame. """
     return process_cpu_data(parse_cpu_samples(samples))
+
 
 def parse_task_samples(samples):
     """ Converts a collection of TaskSamples to a DataFrame. """
@@ -107,6 +116,7 @@ def parse_task_samples(samples):
     df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
     return df
 
+
 def process_task_data(df):
     """ Computes the app jiffy rate of each 50ms bucket """
     df['jiffies'] = df.user + df.system
@@ -117,19 +127,24 @@ def process_task_data(df):
     df.timestamp = bucket_timestamps(df.timestamp)
     cpu = df.groupby(['timestamp', 'id']).cpu.max()
 
-    jiffies, ts = max_rolling_difference(df.groupby(['timestamp', 'id']).jiffies.min().unstack())
+    jiffies, ts = max_rolling_difference(df.groupby(
+        ['timestamp', 'id']).jiffies.min().unstack())
     jiffies = jiffies.stack().to_frame()
     jiffies['cpu'] = cpu
-    jiffies = jiffies.groupby(['timestamp', 'id', 'cpu'])[0].sum().unstack().unstack().div(ts, axis = 0).stack().stack(0)
+    jiffies = jiffies.groupby(['timestamp', 'id', 'cpu'])[0].sum(
+    ).unstack().unstack().div(ts, axis=0).stack().stack(0)
 
     return jiffies
+
 
 def task_samples_to_df(samples):
     """ Converts a collection of TaskSamples to a processed DataFrame. """
     return process_task_data(parse_task_samples(samples))
 
+
 # rapl processing
 WRAP_AROUND_VALUE = 16384
+
 
 def parse_rapl_samples(samples):
     """ Converts a collection of RaplSamples to a DataFrame. """
@@ -156,6 +171,7 @@ def parse_rapl_samples(samples):
     df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
     return df
 
+
 # TODO(timur): i've been told by alejandro that the value i'm using isn't
 #   actually the wrap around. i'm not sure how to look it up properly however.
 def maybe_apply_wrap_around(value):
@@ -165,6 +181,7 @@ def maybe_apply_wrap_around(value):
     else:
         return value
 
+
 def process_rapl_data(df):
     """ Computes the power of each 50ms bucket """
     df.timestamp = bucket_timestamps(df.timestamp)
@@ -173,13 +190,16 @@ def process_rapl_data(df):
 
     energy, ts = max_rolling_difference(df.unstack())
     energy = energy.stack().stack().apply(maybe_apply_wrap_around)
-    energy = energy.groupby(['timestamp', 'socket', 'component']).sum().div(ts, axis = 0)
+    energy = energy.groupby(
+        ['timestamp', 'socket', 'component']).sum().div(ts, axis=0)
 
     return energy
+
 
 def rapl_samples_to_df(samples):
     """ Converts a collection of RaplSamples to a processed DataFrame. """
     return process_rapl_data(parse_rapl_samples(samples))
+
 
 # nvml processing
 def parse_nvml_samples(samples):
@@ -201,6 +221,7 @@ def parse_nvml_samples(samples):
     df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
     return df
 
+
 def process_nvml_data(df):
     """ Computes the power of each 50ms bucket """
     df.timestamp = bucket_timestamps(df.timestamp)
@@ -210,23 +231,27 @@ def process_nvml_data(df):
 
     return df
 
+
 def nvml_samples_to_df(samples):
     """ Converts a collection of NvmlSamples to a processed DataFrame. """
     return process_nvml_data(parse_nvml_samples(samples))
 
-# accounting
-# TODO(timur): find out if there's a general conversion formula
-RAPL_DOMAIN_CONVERSION = lambda x: 0 if int(x) < 20 else 1
 
+# accounting
 def account_jiffies(task, cpu):
-    """ Returns the ratio of the jiffies with a correction for overaccounting. """
+    """ Returns the ratio of the jiffies with an overaccounting correction. """
     task = task_samples_to_df(task)
     cpu = cpu_samples_to_df(cpu)
     # TODO(timur): let's clean this; i think it's outputting some garbage data
     return (task / cpu.replace(0, 1)).replace(np.inf, 1).clip(0, 1)
 
+
+# TODO(timur): find out if there's a way to abstract this
+def RAPL_DOMAIN_CONVERSION(x): return 0 if int(x) < 20 else 1
+
+
 def account_rapl_energy(activity, rapl):
-    """ Returns the product of the energy and the cpu-aligned activity data. """
+    """ Returns the product of energy and activity by socket. """
     activity = activity.reset_index()
     activity['socket'] = activity.cpu.apply(RAPL_DOMAIN_CONVERSION)
     activity = activity.set_index(['timestamp', 'id', 'socket'])['activity']
@@ -238,7 +263,7 @@ def account_rapl_energy(activity, rapl):
     try:
         df = rapl * activity
     except:
-        print('rapl data could not be directly aligned; forcing a merge instead')
+        print('nvml data could not be directly aligned; forced merge instead')
         activity = activity.reset_index()
         rapl = rapl.reset_index()
         df = pd.merge(activity, rapl, on=['timestamp', 'socket'])
@@ -249,8 +274,11 @@ def account_rapl_energy(activity, rapl):
     df.name = 'power'
     return df
 
+
+# TODO(timur): this is an incomplete way of doing this. can we look up the
+# thread positioning within the gpu with nvml?
 def account_nvml_energy(activity, nvml):
-    """ Returns the product of the energy and the cpu-aligned activity data. """
+    """ Returns the product of energy and activity. """
     activity = activity.groupby(['timestamp', 'id']).sum()
 
     nvml = nvml_samples_to_df(nvml)
@@ -260,7 +288,7 @@ def account_nvml_energy(activity, nvml):
     try:
         df = nvml * activity
     except:
-        print('nvml data could not be directly aligned; forcing a merge instead')
+        print('nvml data could not be directly aligned; forced merge instead')
         activity = activity.reset_index()
         nvml = nvml.reset_index()
         df = pd.merge(activity, nvml, on=['timestamp'])
@@ -270,6 +298,7 @@ def account_nvml_energy(activity, nvml):
     df = df.reset_index().set_index(['timestamp', 'id'])
     df.name = 'power'
     return df
+
 
 def compute_footprint(data):
     """ Produces an energy footprint from the data set. """
@@ -287,6 +316,8 @@ def compute_footprint(data):
     return footprints
 
 # cli to process globs of files
+
+
 def parse_args():
     """ Parses client-side arguments. """
     parser = ArgumentParser()
@@ -305,6 +336,7 @@ def parse_args():
     )
     return parser.parse_args()
 
+
 def main():
     args = parse_args()
     for file in args.files:
@@ -315,11 +347,13 @@ def main():
         # TODO(timur): i hate that i did this. we need to get the footprint in the proto
         if args.output:
             if os.path.exists(args.output) and not os.path.isdir(args.output):
-                raise RuntimeError('output target {} already exists and is not a directory; aborting'.format(args.output))
+                raise RuntimeError(
+                    'output target {} already exists and is not a directory; aborting'.format(args.output))
             elif not os.path.exists(args.output):
                 os.makedirs(args.output)
 
-            path = os.path.join(args.output, os.path.splitext(os.path.basename(file))[0] + '-footprint.csv')
+            path = os.path.join(args.output, os.path.splitext(
+                os.path.basename(file))[0] + '-footprint.csv')
         else:
             path = os.path.splitext(file)[0] + '-footprint.csv'
         df = compute_footprint(data)
@@ -328,6 +362,7 @@ def main():
 
         # df.to_csv(path)
         # print('wrote footprint for data set {} at {}'.format(file, path))
+
 
 if __name__ == '__main__':
     main()

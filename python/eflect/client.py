@@ -1,15 +1,11 @@
 """ a client that can talk to an eflect sampler. """
-import importlib
-import os
-import time
-
 from argparse import ArgumentParser
 
 import grpc
 
-from protos.sample.sample_pb2 import DataSet
 from protos.sampler.sampler_pb2 import ReadRequest, StartRequest, StopRequest
 from protos.sampler.sampler_pb2_grpc import SamplerStub
+
 
 def parse_args():
     """ Parses client-side arguments. """
@@ -35,6 +31,7 @@ def parse_args():
     )
     return parser.parse_args()
 
+
 class EflectClient:
     def __init__(self, addr):
         self.stub = SamplerStub(grpc.insecure_channel(addr))
@@ -48,18 +45,21 @@ class EflectClient:
     def read(self):
         return self.stub.Read(ReadRequest())
 
+
 def main():
     args = parse_args()
 
     client = EflectClient(args.addr)
     if args.command == 'start':
         if args.pid < 0:
-            raise Exception('the pid to monitor must be non-negative ({})'.format(args.pid))
+            raise Exception(
+                'the pid to monitor must be non-negative ({})'.format(args.pid))
         client.start(args.pid)
     elif args.command == 'stop':
         client.stop()
     elif args.command == 'read':
         print(client.read())
+
 
 if __name__ == '__main__':
     main()
