@@ -201,6 +201,38 @@ def rapl_samples_to_df(samples):
     return process_rapl_data(parse_rapl_samples(samples))
 
 
+# battery_manager processing
+def parse_battery_manager_samples(samples):
+    """ Converts a collection of BatteryManagerSamples to a DataFrame. """
+    records = []
+    for sample in samples:
+        for reading in sample.reading:
+            records.append([
+                sample.timestamp,
+                reading.battery_property_energy_counter,
+            ])
+    df = pd.DataFrame(records)
+    df.columns = [
+        'timestamp',
+        'battery_energy',
+    ]
+    df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
+    return df
+
+
+def process_battery_manager_data(df):
+    """ Computes the power of each 50ms bucket """
+    df.timestamp = bucket_timestamps(df.timestamp)
+    df = df.groupby('timestamp').min()
+
+    return df
+
+
+def battery_manager_samples_to_df(samples):
+    """ Converts a collection of BatteryManagerSamples to a processed DataFrame. """
+    return process_battery_manager_data(parse_battery_manager_samples(samples))
+
+
 # nvml processing
 def parse_nvml_samples(samples):
     """ Converts a collection of RaplSamples to a DataFrame. """
@@ -274,6 +306,32 @@ def account_rapl_energy(activity, rapl):
     df.name = 'power'
     return df
 
+# TODO(timur): this is an incomplete way of doing this. can we look up the
+# thread positioning within the gpu with nvml?
+
+
+def account_battery_manager_energy(activity, battery_manager):
+    """ Returns the product of energy and activity. """
+    activity = activity.groupby(['timestamp', 'id']).sum()
+
+    battery_manager = battery_manager_samples_to_df(battery_manager)
+
+    # TODO(timur): we should just be able to take the product but the axis
+    #   misalignment causes it to fail sometimes
+    try:
+        df = battery_manager * activity
+    except:
+        print('battery_manager data could not be directly aligned; forced merge instead')
+        activity = activity.reset_index()
+        battery_manager = battery_manager.reset_index()
+        df = pd.merge(activity, battery_manager, on=['timestamp'])
+        df[0] = df['activity'] * df['battery_energy']
+        df = df.set_index(['timestamp', 'id'])[0]
+
+    df = df.reset_index().set_index(['timestamp', 'id'])
+    df.name = 'power'
+    return df
+
 
 # TODO(timur): this is an incomplete way of doing this. can we look up the
 # thread positioning within the gpu with nvml?
@@ -309,6 +367,10 @@ def compute_footprint(data):
 
     if len(data.rapl) > 0:
         footprints['rapl'] = account_rapl_energy(activity, data.rapl)
+
+    if len(data.battery_manager) > 0:
+        footprints['battery_manager'] = account_battery_manager_energy(
+            activity, data.battery_manager)
 
     if len(data.nvml) > 0:
         footprints['nvml'] = account_nvml_energy(activity, data.nvml)
@@ -353,14 +415,15 @@ def main():
                 os.makedirs(args.output)
 
             path = os.path.join(args.output, os.path.splitext(
-                os.path.basename(file))[0] + '-footprint.csv')
+                os.path.basename(file))[0])
         else:
-            path = os.path.splitext(file)[0] + '-footprint.csv'
+            path = os.path.splitext(file)[0]
         df = compute_footprint(data)
 
-        print(df['nvml'].groupby('id').sum()[0].sort_values().tail(15))
+        # print(data)
 
-        # df.to_csv(path)
+        df['activity'].to_csv(path + '-activity-footprint.csv')
+        df['battery_manager'].to_csv(path + '-battery_manager-footprint.csv')
         # print('wrote footprint for data set {} at {}'.format(file, path))
 
 
