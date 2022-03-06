@@ -69,6 +69,7 @@ public final class SampleCollector {
               break;
           }
         });
+    data.clear();
     return dataSet.build();
   }
 

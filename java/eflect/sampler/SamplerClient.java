@@ -1,10 +1,10 @@
-package eflect;
+package eflect.sampler;
 
 import eflect.protos.sample.DataSet;
-import eflect.protos.sample.ReadRequest;
-import eflect.protos.sample.SamplerGrpc;
-import eflect.protos.sample.StartRequest;
-import eflect.protos.sample.StopRequest;
+import eflect.protos.sampler.ReadRequest;
+import eflect.protos.sampler.SamplerGrpc;
+import eflect.protos.sampler.StartRequest;
+import eflect.protos.sampler.StopRequest;
 import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -53,16 +53,14 @@ public final class SamplerClient extends SamplerGrpc.SamplerImplBase {
 
   public static void main(String[] args) throws Exception {
     String command = args[0];
-    long pid = Long.parseLong(args[2]);
+    long pid = 1; // Long.parseLong(args[2]);
 
-    ManagedChannel channel =
-        ManagedChannelBuilder.forTarget("[::1]:50051")
-            // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
-            // needing certificates.
-            .usePlaintext()
-            .build();
+    // Channels are secure by default (via SSL/TLS). For the example we disable TLS
+    // to avoid needing certificates.
+    ManagedChannel channel = ManagedChannelBuilder.forTarget("[::1]:50051").usePlaintext().build();
+
     try {
-      Client client = new Client(channel);
+      SamplerClient client = new SamplerClient(channel);
       switch (command) {
         case "start":
           client.start(pid);
@@ -71,7 +69,15 @@ public final class SamplerClient extends SamplerGrpc.SamplerImplBase {
           client.stop();
           break;
         case "read":
-          System.out.println(client.read());
+          System.out.println(
+              client.read().getTaskList().stream().reduce((a, b) -> b).orElse(null).getTimestamp());
+          break;
+        case "test":
+          client.start(pid);
+          Thread.sleep(1000);
+          client.stop();
+          System.out.println(
+              client.read().getTaskList().stream().reduce((a, b) -> b).orElse(null).getTimestamp());
           break;
       }
     } finally {
