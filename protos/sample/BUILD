@@ -6,7 +6,6 @@ load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
 # sample protos
 SAMPLE_SOURCES = [
   # place all data sources here and keep them sorted
-  "battery_manager.proto",
   "jiffies.proto",
   "nvml.proto",
   "rapl.proto",

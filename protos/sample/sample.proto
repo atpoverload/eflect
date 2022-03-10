@@ -2,7 +2,6 @@ syntax = "proto2";
 
 package eflect.protos.sample;
 
-import "protos/sample/battery_manager.proto";
 import "protos/sample/jiffies.proto";
 import "protos/sample/nvml.proto";
 import "protos/sample/rapl.proto";
@@ -14,7 +13,6 @@ message Sample {
   oneof data {
     // energy data
     RaplSample rapl = 1;
-    BatteryManagerSample battery_manager = 4;
     NvmlSample nvml = 5;
 
     // jiffies data
@@ -26,7 +24,6 @@ message Sample {
 message DataSet {
   // energy data
   repeated RaplSample rapl = 1;
-  repeated BatteryManagerSample battery_manager = 4;
   repeated NvmlSample nvml = 5;
 
   // jiffies data
