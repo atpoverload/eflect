@@ -1,6 +1,7 @@
 // a simple server implementation for eflect on linux. only one process can be monitored at a time.
 // /proc/stat, /proc/pid/task, and /sys/class/powercap are each sampled from their own thread.
 // TODO(timur): switch to an executor so we can divide up the readings?
+// TODO(timur): how should we implement multi-process monitoring?
 mod protos {
     tonic::include_proto!("eflect.protos.sample");
 }
@@ -53,6 +54,7 @@ fn now_ms() -> u64 {
 //  - the process dies
 enum SamplingError {
     NotRetryable(String),
+    RequiresTermination(String),
     Retryable
 }
 
@@ -119,7 +121,7 @@ fn sample_tasks(pid: i32) -> Result<Sample, SamplingError> {
             s.data = Some(Data::Task(sample));
             Ok(s)
         }
-        Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::NotRetryable(format!("/proc/{}/task could not be read", pid))),
+        Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::RequiresTermination(format!("/proc/{}/task could not be read", pid))),
         _ => Err(SamplingError::Retryable)
     }
 }
@@ -343,6 +345,11 @@ impl SamplerImpl {
                             error!("there was an error with a source that cannot be retried: {}", message);
                             break;
                         },
+                        Err(SamplingError::RequiresTermination(message)) => {
+                            error!("there was an error that requires eflect to stop sampling: {}", message);
+                            is_running.store(false, Ordering::Relaxed);
+                            break;
+                        }
                         Err(SamplingError::Retryable) => error!("there was an error with a source that will be retried"),
                     };
 
