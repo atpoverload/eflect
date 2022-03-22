@@ -1,3 +1,6 @@
+// protos to represent measurements made with the nvidia smi
+//
+// https://developer.nvidia.com/nvidia-system-management-interface
 syntax = "proto2";
 
 package eflect.protos.sample;
@@ -5,8 +8,11 @@ package eflect.protos.sample;
 option java_multiple_files = true;
 option java_package = "eflect.protos.sample";
 
+// TODO(timur): what other device metadata do we need?
 message NvmlReading {
+  // serial string that identifies the device on the system
   required string bus_id = 1;
+  // power usage in milliwatts so we don't need to use a float
   optional uint32 power_usage = 2;
 }
 

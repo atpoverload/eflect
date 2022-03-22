@@ -331,7 +331,7 @@ def parse_args():
         '--output_dir',
         dest='output',
         default=None,
-        help='path to write the processed data to',
+        help='directory to write the processed data to',
     )
     return parser.parse_args()
 
@@ -343,7 +343,7 @@ def main():
             data = DataSet()
             data.ParseFromString(f.read())
 
-        # TODO(timur): i hate that i did this. we need to get the footprint in the proto
+        # TODO(timur): i hate that i did this. we need to get the footprint(s) in a proto
         if args.output:
             if os.path.exists(args.output) and not os.path.isdir(args.output):
                 raise RuntimeError(
@@ -352,14 +352,14 @@ def main():
                 os.makedirs(args.output)
 
             path = os.path.join(args.output, os.path.splitext(
-                os.path.basename(file))[0])
+                os.path.basename(file))[0]) + '.zip'
         else:
-            path = os.path.splitext(file)[0]
+            path = os.path.splitext(file)[0] + '.zip'
         footprints = compute_footprint(data)
 
         for key in footprints:
-            df[key].to_csv(
-                'eflect-footprint.zip',
+            footprints[key].to_csv(
+                path,
                 compression=dict(
                     method='zip',
                     archive_name='{}.csv'.format(key)

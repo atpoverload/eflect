@@ -6,7 +6,7 @@ import eflect.protos.sample.Sample;
 import java.time.Instant;
 import jrapl.Rapl;
 
-/** A clerk that collects jiffies and energy data for an intel linux system. */
+/** Static helper that packs jRapl readings into a proto. */
 public final class RaplDataSources {
   public static Sample sampleRapl() {
     RaplSample.Builder sample = RaplSample.newBuilder().setTimestamp(Instant.now().toEpochMilli());

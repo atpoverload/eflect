@@ -11,7 +11,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
-/** A clerk that collects samples into a data set. */
+/** A class that allows for fixed periodic collection of {@link Samples} into a {@DataSet}. */
 public final class SampleCollector {
   private final ArrayList<Future<Sample>> sampleFutures = new ArrayList<>();
   private final ArrayList<Sample> data = new ArrayList<>();

@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-/** A clerk that collects jiffies and energy data for an intel linux system. */
+/** Static helper for reading jiffies from the /proc system. */
 public final class JiffiesDataSources {
   private static final Logger logger = LoggerUtil.getLogger();
   private static final long PID = ProcessHandle.current().pid();

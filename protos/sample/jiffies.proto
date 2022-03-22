@@ -1,3 +1,9 @@
+// protos to represent the jiffies timesharing objects
+//
+// the messages here represent the fields for /proc/stat and
+// /proc/[pid]/stat to track application behavior by cpu location
+//
+// refer to https://man7.org/linux/man-pages/man5/proc.5.html
 syntax = "proto2";
 
 package eflect.protos.sample;
@@ -5,6 +11,9 @@ package eflect.protos.sample;
 option java_multiple_files = true;
 option java_package = "eflect.protos.sample";
 
+// TODO(timur): since jiffies are system dependent, these values should only be
+//   compared within the same runtime (i.e. data set). if we wanted to get real
+//   cycles, we'd need to retain the jiffies update time (typically 10MHz).
 message CpuStatReading {
   required uint32 cpu = 1;
   optional uint32 user = 2;
@@ -24,6 +33,8 @@ message CpuStatSample {
   repeated CpuStatReading reading = 2;
 }
 
+// TODO(timur): there is quite a lot of metadata we can retain still but a lot
+//   of it is contextual
 message TaskStatReading {
   required uint32 task_id = 1;
   optional string name = 2;
