@@ -158,6 +158,9 @@ fn sample_rapl() -> Result<Sample, SamplingError> {
 
 static POWERCAP_PATH: &str = "/sys/class/powercap";
 // TODO(timur): implement handling for N domains
+// TODO(timur): maybe we should directly read from rapl?
+// TODO(timur): we need a way to report if rapl isn't readable (no sudo for example); the current
+//   way missed it
 fn read_rapl() -> Result<Vec<RaplReading>, SamplingError> {
     match fs::read_dir(POWERCAP_PATH) {
         Ok(components) => Ok(components
@@ -391,7 +394,7 @@ impl Sampler for SamplerImpl {
             self.start_sampling_from(move || sample_tasks(pid));
 
             // TODO(timur): get rid of this hack for wsl
-            self.start_sampling_from(sample_nvidia_smi);
+            // self.start_sampling_from(sample_nvidia_smi);
         } else {
             warn!("ignoring start request while collecting");
         }
