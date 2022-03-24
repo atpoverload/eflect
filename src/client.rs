@@ -2,7 +2,12 @@ mod protos {
     tonic::include_proto!("eflect.protos.sample");
 }
 
-use clap::App;
+use std::fs::File;
+use std::io::Write;
+
+use bytes::buf::BufMut;
+use clap::{App, Arg};
+use prost::Message;
 
 use protos::sampler_client::SamplerClient;
 use protos::{ReadRequest, StartRequest, StopRequest};
@@ -10,34 +15,71 @@ use protos::{ReadRequest, StartRequest, StopRequest};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("eflect")
-        .subcommand(App::new("start"))
+        .subcommand(App::new("start")
+            .arg_from_usage("--pid=<pid> 'The id of the process to monitor'"))
         .subcommand(App::new("stop"))
-        .subcommand(App::new("read"))
-        .arg_from_usage("--pid=<pid> 'The id of the process to monitor'")
+        .subcommand(App::new("read")
+            .arg(Arg::with_name("output")
+                .long("output")
+                .required(false)))
+        .subcommand(App::new("ping"))
         .get_matches();
     let (cmd, _) = matches.subcommand();
 
-    let pid: Option<u64> = Some(matches.value_of("pid").unwrap().parse().unwrap());
     let mut client = SamplerClient::connect("http://[::1]:50051").await?;
     match cmd {
         "start" => {
+            let pid: Option<u64> = Some(matches.value_of("pid").unwrap().parse().unwrap());
+
             client
                 .start(tonic::Request::new(StartRequest { pid }))
                 .await?;
-            ()
         }
         "stop" => {
             client
-                .stop(tonic::Request::new(StopRequest { pid }))
+                .stop(tonic::Request::new(StopRequest { pid: None }))
                 .await?;
-            ()
         }
-        "read" => println!(
-            "{:?}",
+        "read" => {
+            let message = client
+                .read(tonic::Request::new(ReadRequest { pid: None }))
+                .await?;
+            let message = message.get_ref().data.as_ref().unwrap();
+            match matches.value_of("output") {
+                Some(path) => {
+                    let mut buffer = vec![];
+                    match message.encode(&mut buffer) {
+                        Ok(_) => {
+                            let mut file = File::create(path)?;
+                            file.write_all(&buffer)?;
+                        }
+                        Err(e) => println!("error encoding message: {}", e)
+                    }
+                }
+                _ => println!("{:?}", message)
+            }
+        }
+        "ping" => {
             client
-                .read(tonic::Request::new(ReadRequest { pid }))
-                .await?
-        ),
+                .start(tonic::Request::new(StartRequest { pid: Some(1) }))
+                .await?;
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            client
+                .stop(tonic::Request::new(StopRequest { pid: None }))
+                .await?;
+            let message = client
+                .read(tonic::Request::new(ReadRequest { pid: None }))
+                .await?;
+            let message = message.get_ref().data.as_ref().unwrap();
+            let mut buffer = vec![];
+            match message.encode(&mut buffer) {
+                Ok(_) => {
+                    let mut file = File::create("eflect-ping-data.pb")?;
+                    file.write_all(&buffer)?;
+                }
+                Err(e) => println!("error encoding message: {}", e)
+            }
+        }
         _ => println!("don't understand {}", cmd),
     };
 

@@ -12,6 +12,7 @@ log = "0.4"
 procfs = "0.10.1"
 nvml-wrapper = "0.7.0"
 
+bytes = "1.1.0"
 prost = "0.9"
 prost-types = "0.9"
 tonic = "0.6.2"
