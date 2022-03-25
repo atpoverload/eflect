@@ -442,7 +442,7 @@ impl Sampler for SamplerImpl {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::builder().filter_level(LevelFilter::Info).init();
     let matches = App::new("eflect")
-        .arg_from_usage("--addr [address] 'The address to host the eflect server'")
+        .arg_from_usage("--addr [address] 'The address to host the eflect server at'")
         .get_matches();
 
     let addr = matches.value_of("addr").or(Some("[::1]:50051")).unwrap().parse().unwrap();

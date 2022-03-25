@@ -19,33 +19,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .arg_from_usage("--pid=<pid> 'The id of the process to monitor'"))
         .subcommand(App::new("stop"))
         .subcommand(App::new("read")
-            .arg(Arg::with_name("output")
-                .long("output")
-                .required(false)))
+            .arg_from_usage("--output=[output] 'The path to write the data set to'"))
         .subcommand(App::new("ping"))
+        .arg_from_usage("--addr [address] 'The address the eflect server is hosted at'")
         .get_matches();
-    let (cmd, _) = matches.subcommand();
+    let (cmd, submatches) = matches.subcommand();
 
     let mut client = SamplerClient::connect("http://[::1]:50051").await?;
     match cmd {
-        "start" => {
-            let pid: Option<u64> = Some(matches.value_of("pid").unwrap().parse().unwrap());
-
-            client
-                .start(tonic::Request::new(StartRequest { pid }))
-                .await?;
-        }
-        "stop" => {
-            client
-                .stop(tonic::Request::new(StopRequest { pid: None }))
-                .await?;
-        }
+        "start" => client
+            .start(tonic::Request::new(StartRequest {
+                pid: submatches.unwrap().value_of("pid").unwrap().parse().ok()
+            }))
+            .await?
+        "stop" => client.stop(tonic::Request::new(StopRequest { pid: None })).await?
         "read" => {
             let message = client
                 .read(tonic::Request::new(ReadRequest { pid: None }))
                 .await?;
             let message = message.get_ref().data.as_ref().unwrap();
-            match matches.value_of("output") {
+            match submatches.unwrap().value_of("output") {
                 Some(path) => {
                     let mut buffer = vec![];
                     match message.encode(&mut buffer) {
