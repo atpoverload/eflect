@@ -69,7 +69,8 @@ fn sample_cpus() -> Result<Sample, SamplingError> {
             s.data = Some(Data::Cpu(sample));
             Ok(s)
         },
-        Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::NotRetryable(format!("/proc/stat could not be read"))),
+        Err(ProcError::PermissionDenied(e)) | Err(ProcError::NotFound(e)) =>
+            Err(SamplingError::NotRetryable(format!("/proc/stat could not be read: {:?}", e))),
         _ => Err(SamplingError::Retryable)
     }
 }

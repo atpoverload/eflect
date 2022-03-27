@@ -1,4 +1,4 @@
-""" a client that runs a user-defined workload monitored by an eflect server. """
+""" a client that runs a user workload monitored by an eflect server. """
 import importlib
 import os
 

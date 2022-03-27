@@ -5,3 +5,6 @@
 	path = experiments/third_party/tensorflow
 	url = https://github.com/timurbey/tensorflow.git
 	branch = jni-unstripped
+[submodule "python/experiments/bert/third_party/bert"]
+	path = python/experiments/bert/third_party/bert
+	url = https://github.com/atpoverload/bert.git

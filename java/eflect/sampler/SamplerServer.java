@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** A clerk that collects samples into a data set. */
+/** An eflect server that can only watch one process at a time. */
 public final class SamplerServer {
   private static final Duration DEFAULT_PERIOD = Duration.ofMillis(50);
   private static final AtomicInteger counter = new AtomicInteger();
@@ -77,6 +77,7 @@ public final class SamplerServer {
     }
   }
 
+  /** Server that wraps the {@link SamplerCollector}. */
   static class SamplerImpl extends SamplerGrpc.SamplerImplBase {
     private final SampleCollector collector;
     private final Duration period;

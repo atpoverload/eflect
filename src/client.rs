@@ -1,3 +1,5 @@
+// a simple client that talks to an eflect server. currently assumes the server can only watch
+// a single process
 mod protos {
     tonic::include_proto!("eflect.protos.sample");
 }

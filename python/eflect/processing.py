@@ -1,4 +1,4 @@
-""" Code used to process data collected by eflect. """
+""" code used to process data collected by eflect. """
 import os
 
 from argparse import ArgumentParser

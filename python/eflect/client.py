@@ -58,6 +58,9 @@ def main():
     elif args.command == 'stop':
         client.stop()
     elif args.command == 'read':
+        # TODO(timur): although python3 $PWD/client.py read > eflect-data.pb is
+        #   nice, it seems that the python grpc runs out of space. we should do
+        #   something with "read()" to handle this
         print(client.read())
 
 
