@@ -2,6 +2,7 @@ syntax = "proto2";
 
 package eflect.protos.sample;
 
+import "protos/sample/battery_manager.proto";
 import "protos/sample/jiffies.proto";
 import "protos/sample/nvml.proto";
 import "protos/sample/rapl.proto";
@@ -12,6 +13,7 @@ option java_package = "eflect.protos.sample";
 message Sample {
   oneof data {
     // energy data
+    BatteryManagerSample battery_manager = 4;
     RaplSample rapl = 1;
     NvmlSample nvml = 5;
 
@@ -23,6 +25,7 @@ message Sample {
 
 message DataSet {
   // energy data
+  repeated BatteryManagerSample battery_manager = 4;
   repeated RaplSample rapl = 1;
   repeated NvmlSample nvml = 5;
 
