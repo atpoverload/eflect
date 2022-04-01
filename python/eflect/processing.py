@@ -306,6 +306,7 @@ def account_battery_manager_energy(activity, battery_manager):
 # TODO(timur): find out if there's a way to abstract this
 def RAPL_DOMAIN_CONVERSION(x): return 0 if int(x) < 20 else 1
 
+
 def account_rapl_energy(activity, rapl):
     """ Returns the product of energy and activity by socket. """
     activity = activity.reset_index()
