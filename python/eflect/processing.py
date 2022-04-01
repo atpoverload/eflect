@@ -142,6 +142,41 @@ def task_samples_to_df(samples):
     return process_task_data(parse_task_samples(samples))
 
 
+# battery_manager processing
+def parse_battery_manager_samples(samples):
+    """ Converts a collection of BatteryManagerSamples to a DataFrame. """
+    records = []
+    for sample in samples:
+        for reading in sample.reading:
+            records.append([
+                sample.timestamp,
+                reading.battery_property_energy_counter,
+            ])
+    df = pd.DataFrame(records)
+    df.columns = [
+        'timestamp',
+        'energy',
+    ]
+    df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
+    return df
+
+
+def process_battery_manager_data(df):
+    """ Computes the power of each 50ms bucket """
+    df.timestamp = bucket_timestamps(df.timestamp)
+    df = df.groupby(['timestamp']).min()
+
+    energy, ts = max_rolling_difference(df)
+    energy = energy.div(ts, axis=0)
+
+    return energy
+
+
+def battery_manager_samples_to_df(samples):
+    """ Converts a collection of BatteryManagerSamples to a processed DataFrame. """
+    return process_battery_manager_data(parse_battery_manager_samples(samples))
+
+
 # rapl processing
 WRAP_AROUND_VALUE = 16384
 
@@ -245,6 +280,28 @@ def account_jiffies(task, cpu):
     # TODO(timur): let's clean this; i think it's outputting some garbage data
     return (task / cpu.replace(0, 1)).replace(np.inf, 1).clip(0, 1)
 
+def account_battery_manager_energy(activity, battery_manager):
+    """ Returns the product of energy and activity by socket. """
+    activity = activity.reset_index()
+    activity = activity.set_index(['timestamp', 'id'])['activity']
+
+    battery_manager = battery_manager_samples_to_df(battery_manager)
+
+    # TODO(timur): we should just be able to take the product but the axis
+    #   misalignment causes it to fail sometimes
+    try:
+        df = battery_manager * activity
+    except:
+        print('battery_manager data could not be directly aligned; forced merge instead')
+        activity = activity.reset_index()
+        battery_manager = battery_manager.reset_index()
+        df = pd.merge(activity, battery_manager, on=['timestamp'])
+        df[0] = df['activity'] * df['energy']
+        df = df.set_index(['timestamp', 'id'])[0]
+
+    df = df.reset_index().set_index(['timestamp', 'id'])
+    df.name = 'power'
+    return df
 
 # TODO(timur): find out if there's a way to abstract this
 def RAPL_DOMAIN_CONVERSION(x): return 0 if int(x) < 20 else 1
@@ -306,6 +363,9 @@ def compute_footprint(data):
     activity = account_jiffies(data.task, data.cpu)
     activity.name = 'activity'
     footprints = {'activity': activity}
+
+    if len(data.battery_manager) > 0:
+        footprints['battery_manager'] = account_battery_manager_energy(activity, data.battery_manager)
 
     if len(data.rapl) > 0:
         footprints['rapl'] = account_rapl_energy(activity, data.rapl)
