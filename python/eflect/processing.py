@@ -120,7 +120,7 @@ def parse_task_samples(samples):
 def process_task_data(df):
     """ Computes the app jiffy rate of each 50ms bucket """
     df['jiffies'] = df.user + df.system
-    # the thread name is currently unused because it typically isn't useful
+    # TODO(timur): the thread name is currently unused because it typically isn't useful
     # df = df[~df.name.str.contains('eflect-')]
     # df['id'] = df.id.astype(str) + '-' + df.name
 
@@ -175,6 +175,42 @@ def process_battery_manager_data(df):
 def battery_manager_samples_to_df(samples):
     """ Converts a collection of BatteryManagerSamples to a processed DataFrame. """
     return process_battery_manager_data(parse_battery_manager_samples(samples))
+
+
+# nvml processing
+def parse_nvml_samples(samples):
+    """ Converts a collection of RaplSamples to a DataFrame. """
+    records = []
+    for sample in samples:
+        for reading in sample.reading:
+            records.append([
+                sample.timestamp,
+                reading.bus_id,
+                reading.power_usage,
+            ])
+    df = pd.DataFrame(records)
+    df.columns = [
+        'timestamp',
+        'bus_id',
+        'power_usage',
+    ]
+    df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
+    return df
+
+
+def process_nvml_data(df):
+    """ Computes the power of each 50ms bucket """
+    df.timestamp = bucket_timestamps(df.timestamp)
+    df = df.groupby(['timestamp', 'bus_id']).min()
+    # TODO(timur): this assumes the baseline is the smallest reading; we should do something else
+    df = df - df.groupby('bus_id').min()
+
+    return df
+
+
+def nvml_samples_to_df(samples):
+    """ Converts a collection of NvmlSamples to a processed DataFrame. """
+    return process_nvml_data(parse_nvml_samples(samples))
 
 
 # rapl processing
@@ -236,42 +272,6 @@ def rapl_samples_to_df(samples):
     return process_rapl_data(parse_rapl_samples(samples))
 
 
-# nvml processing
-def parse_nvml_samples(samples):
-    """ Converts a collection of RaplSamples to a DataFrame. """
-    records = []
-    for sample in samples:
-        for reading in sample.reading:
-            records.append([
-                sample.timestamp,
-                reading.bus_id,
-                reading.power_usage,
-            ])
-    df = pd.DataFrame(records)
-    df.columns = [
-        'timestamp',
-        'bus_id',
-        'power_usage',
-    ]
-    df.timestamp = pd.to_datetime(df.timestamp, unit='ms')
-    return df
-
-
-def process_nvml_data(df):
-    """ Computes the power of each 50ms bucket """
-    df.timestamp = bucket_timestamps(df.timestamp)
-    df = df.groupby(['timestamp', 'bus_id']).min()
-    # TODO(timur): this assumes the baseline is the smallest reading; we should do something else
-    df = df - df.groupby('bus_id').min()
-
-    return df
-
-
-def nvml_samples_to_df(samples):
-    """ Converts a collection of NvmlSamples to a processed DataFrame. """
-    return process_nvml_data(parse_nvml_samples(samples))
-
-
 # accounting
 def account_jiffies(task, cpu):
     """ Returns the ratio of the jiffies with an overaccounting correction. """
@@ -279,6 +279,7 @@ def account_jiffies(task, cpu):
     cpu = cpu_samples_to_df(cpu)
     # TODO(timur): let's clean this; i think it's outputting some garbage data
     return (task / cpu.replace(0, 1)).replace(np.inf, 1).clip(0, 1)
+
 
 def account_battery_manager_energy(activity, battery_manager):
     """ Returns the product of energy and activity by socket. """
@@ -300,34 +301,6 @@ def account_battery_manager_energy(activity, battery_manager):
         df = df.set_index(['timestamp', 'id'])[0]
 
     df = df.reset_index().set_index(['timestamp', 'id'])
-    df.name = 'power'
-    return df
-
-# TODO(timur): find out if there's a way to abstract this
-def RAPL_DOMAIN_CONVERSION(x): return 0 if int(x) < 20 else 1
-
-
-def account_rapl_energy(activity, rapl):
-    """ Returns the product of energy and activity by socket. """
-    activity = activity.reset_index()
-    activity['socket'] = activity.cpu.apply(RAPL_DOMAIN_CONVERSION)
-    activity = activity.set_index(['timestamp', 'id', 'socket'])['activity']
-
-    rapl = rapl_samples_to_df(rapl)
-
-    # TODO(timur): we should just be able to take the product but the axis
-    #   misalignment causes it to fail sometimes
-    try:
-        df = rapl * activity
-    except:
-        print('nvml data could not be directly aligned; forced merge instead')
-        activity = activity.reset_index()
-        rapl = rapl.reset_index()
-        df = pd.merge(activity, rapl, on=['timestamp', 'socket'])
-        df[0] = df['0_x'] * df['0_y']
-        df = df.set_index(['timestamp', 'id', 'component', 'socket'])[0]
-
-    df = df.reset_index().set_index(['timestamp', 'id', 'component', 'socket'])
     df.name = 'power'
     return df
 
@@ -357,6 +330,35 @@ def account_nvml_energy(activity, nvml):
     return df
 
 
+# TODO(timur): find out if there's a way to abstract this
+def RAPL_DOMAIN_CONVERSION(x): return 0 if int(x) < 20 else 1
+
+
+def account_rapl_energy(activity, rapl):
+    """ Returns the product of energy and activity by socket. """
+    activity = activity.reset_index()
+    activity['socket'] = activity.cpu.apply(RAPL_DOMAIN_CONVERSION)
+    activity = activity.set_index(['timestamp', 'id', 'socket'])['activity']
+
+    rapl = rapl_samples_to_df(rapl)
+
+    # TODO(timur): we should just be able to take the product but the axis
+    #   misalignment causes it to fail sometimes
+    try:
+        df = rapl * activity
+    except:
+        print('rapl data could not be directly aligned; forced merge instead')
+        activity = activity.reset_index()
+        rapl = rapl.reset_index()
+        df = pd.merge(activity, rapl, on=['timestamp', 'socket'])
+        df[0] = df['0_x'] * df['0_y']
+        df = df.set_index(['timestamp', 'id', 'component', 'socket'])[0]
+
+    df = df.reset_index().set_index(['timestamp', 'id', 'component', 'socket'])
+    df.name = 'power'
+    return df
+
+
 def compute_footprint(data):
     """ Produces an energy footprint from the data set. """
     # TODO(timur): we need a summary proto for this
@@ -365,13 +367,14 @@ def compute_footprint(data):
     footprints = {'activity': activity}
 
     if len(data.battery_manager) > 0:
-        footprints['battery_manager'] = account_battery_manager_energy(activity, data.battery_manager)
-
-    if len(data.rapl) > 0:
-        footprints['rapl'] = account_rapl_energy(activity, data.rapl)
+        footprints['battery_manager'] = account_battery_manager_energy(
+            activity, data.battery_manager)
 
     if len(data.nvml) > 0:
         footprints['nvml'] = account_nvml_energy(activity, data.nvml)
+
+    if len(data.rapl) > 0:
+        footprints['rapl'] = account_rapl_energy(activity, data.rapl)
 
     return footprints
 
