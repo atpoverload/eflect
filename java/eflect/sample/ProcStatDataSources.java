@@ -36,32 +36,36 @@ public final class ProcStatDataSources {
     }
   }
 
-  /** Reads the cpu's stats and returns a sample from it. */
+  // TODO(zain): add android friendly version that uses cat instead of trying to read through java
+  /** Reads the cpu's stats and returns a {@link Sample} from it. */
   public static Sample sampleCpuStats() {
-    return Sample.newBuilder()
-        .setCpu(readCpuStats().setTimestamp(Instant.now().toEpochMilli()))
-        .build();
-  }
-
-  /** Reads the system's stat file and returns individual cpus. */
-  private static String[] readCpus() {
-    String[] stats = new String[CPU_COUNT];
+    String[] stats = new String[0];
+    // TODO(zain): update to android friendly version
     try (BufferedReader reader = Files.newBufferedReader(Path.of(SYSTEM_STAT_FILE))) {
-      reader.readLine(); // first line is total summary; we need by cpu
-      for (int i = 0; i < CPU_COUNT; i++) {
-        stats[i] = reader.readLine();
-      }
+      stats = readCpuStats(reader);
     } catch (Exception e) {
       System.out.println("unable to read " + SYSTEM_STAT_FILE);
     }
 
+    return Sample.newBuilder()
+        .setCpu(parseCpuStats(stats).setTimestamp(Instant.now().toEpochMilli()))
+        .build();
+  }
+
+  /** Reads the system's stat file and returns individual cpus. */
+  private static String[] readCpuStats(BufferedReader reader) throws Exception {
+    String[] stats = new String[CPU_COUNT];
+    reader.readLine(); // first line is total summary; we need by cpu
+    for (int i = 0; i < CPU_COUNT; i++) {
+      stats[i] = reader.readLine();
+    }
     return stats;
   }
 
-  /** Turns task stat strings into a Sample. */
-  private static CpuStatSample.Builder readCpuStats() {
+  /** Turns stat strings into a {@link CpuStatSample}. */
+  private static CpuStatSample.Builder parseCpuStats(String[] stats) {
     CpuStatSample.Builder sample = CpuStatSample.newBuilder();
-    for (String statString : readCpus()) {
+    for (String statString : stats) {
       String[] stat = statString.split(" ");
       if (stat.length != 11) {
         continue;

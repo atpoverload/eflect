@@ -31,12 +31,12 @@ public final class ProcTaskDataSources {
   /** Reads from a process's tasks and returns a {@link Sample} of it. */
   public static Sample sampleTaskStats(long pid) {
     return Sample.newBuilder()
-        .setTask(readTaskStats(pid).setTimestamp(Instant.now().toEpochMilli()))
+        .setTask(parseTaskStats(readTaskStats(pid)).setTimestamp(Instant.now().toEpochMilli()))
         .build();
   }
 
   /** Reads stat files of tasks directory of a process. */
-  private static final ArrayList<String> readTasks(long pid) {
+  private static final ArrayList<String> readTaskStats(long pid) {
     ArrayList<String> stats = new ArrayList<String>();
     File tasks = new File(String.join(File.separator, "/proc", Long.toString(pid), "task"));
     if (!tasks.exists()) {
@@ -49,6 +49,7 @@ public final class ProcTaskDataSources {
         continue;
       }
       try {
+        // TODO(zain): update this and the imports to android friendly code
         stats.add(Files.readString(Path.of(statFile.getPath())));
       } catch (Exception e) {
         System.out.println("unable to read task " + statFile + " before it terminated");
@@ -57,32 +58,31 @@ public final class ProcTaskDataSources {
     return stats;
   }
 
+  /** Turns task stat strings into a {@link TaskStatSample}. */
+  private static TaskStatSample.Builder parseTaskStats(ArrayList<String> stats) {
+    TaskStatSample.Builder sample = TaskStatSample.newBuilder();
+    stats.forEach(
+        statString -> {
+          String[] stat = statString.split(" ");
+          if (stat.length >= STAT_LENGTH) {
+            // task name can be space-delimited, so there may be extra entries
+            int offset = stat.length - STAT_LENGTH;
+            sample.addReading(
+                TaskStatReading.newBuilder()
+                    .setTaskId(Integer.parseInt(stat[TaskIndex.TID.index]))
+                    // .setName(getName(stat, offset))
+                    .setCpu(Integer.parseInt(stat[TaskIndex.CPU.index + offset]))
+                    .setUser(Integer.parseInt(stat[TaskIndex.USER.index + offset]))
+                    .setSystem(Integer.parseInt(stat[TaskIndex.SYSTEM.index + offset])));
+          }
+        });
+    return sample;
+  }
+
   /** Extracts the name from the stat string. */
   private static final String getName(String[] stat, int offset) {
     String name = String.join(" ", Arrays.copyOfRange(stat, 1, 2 + offset));
     return name.substring(1, name.length() - 1);
-  }
-
-  /** Turns task stat strings into a Sample. */
-  private static TaskStatSample.Builder readTaskStats(long pid) {
-    TaskStatSample.Builder sample = TaskStatSample.newBuilder();
-    readTasks(pid)
-        .forEach(
-            statString -> {
-              String[] stat = statString.split(" ");
-              if (stat.length >= STAT_LENGTH) {
-                // task name can be space-delimited, so there may be extra entries
-                int offset = stat.length - STAT_LENGTH;
-                sample.addReading(
-                    TaskStatReading.newBuilder()
-                        .setTaskId(Integer.parseInt(stat[TaskIndex.TID.index]))
-                        // .setName(getName(stat, offset))
-                        .setCpu(Integer.parseInt(stat[TaskIndex.CPU.index + offset]))
-                        .setUser(Integer.parseInt(stat[TaskIndex.USER.index + offset]))
-                        .setSystem(Integer.parseInt(stat[TaskIndex.SYSTEM.index + offset])));
-              }
-            });
-    return sample;
   }
 
   private ProcTaskDataSources() {}
