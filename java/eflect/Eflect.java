@@ -111,6 +111,7 @@ public final class Eflect {
 
   /** Writes all sample data from the last session to the output directory. */
   public void dump(String outputPath) {
+    read();
     try (FileOutputStream output = new FileOutputStream(outputPath)) {
       dataSet.build().writeTo(output);
     } catch (Exception e) {
