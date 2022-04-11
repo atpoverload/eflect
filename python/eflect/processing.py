@@ -12,13 +12,13 @@ from protos.sample.sample_pb2 import DataSet
 
 # processing helpers
 # TODO(timur): this is totally arbitrary. do we need metadata in the proto?
-SAMPLE_INTERVAL = '50ms'
+INTERVAL = '50ms'
 WINDOW_SIZE = '501ms'
 
 
-def bucket_timestamps(timestamps, sample_interval=SAMPLE_INTERVAL):
+def bucket_timestamps(timestamps, interval=INTERVAL):
     """ Floors a series of timestamps to some interval for easy aggregates. """
-    return to_datetime(timestamps).dt.floor(sample_interval)
+    return to_datetime(timestamps).dt.floor(interval)
 
 
 def max_rolling_difference(df, window_size=WINDOW_SIZE):
@@ -92,7 +92,7 @@ def cpu_samples_to_df(samples):
 
 
 def parse_task_samples(samples):
-    """ Converts a collection of TaskSamples to a DataFrame. """
+    """ Converts a collection of ProcessSamples to a DataFrame. """
     records = []
     for sample in samples:
         for stat in sample.reading:
@@ -138,7 +138,7 @@ def process_task_data(df):
 
 
 def task_samples_to_df(samples):
-    """ Converts a collection of TaskSamples to a processed DataFrame. """
+    """ Converts a collection of ProcessSamples to a processed DataFrame. """
     return process_task_data(parse_task_samples(samples))
 
 
@@ -273,15 +273,28 @@ def rapl_samples_to_df(samples):
 
 
 # accounting
-def account_jiffies(task, cpu):
-    """ Returns the ratio of the jiffies with an overaccounting correction. """
-    task = task_samples_to_df(task)
+def virtualize_jiffies(process, cpu):
+    """ Returns the ratio of the jiffies with overattribution correction. """
+    tasks = task_samples_to_df(process)
     cpu = cpu_samples_to_df(cpu)
     # TODO(timur): let's clean this; i think it's outputting some garbage data
-    return (task / cpu.replace(0, 1)).replace(np.inf, 1).clip(0, 1)
+    return (tasks / cpu.replace(0, 1)).replace(np.inf, 1).clip(0, 1)
 
 
-def account_battery_manager_energy(activity, battery_manager):
+def virtualize_energy(activity, energy):
+    try:
+        return activity * energy
+    except:
+        print('data could not be directly aligned; forcing merge instead')
+        idx = set(activity.index.names) & set(energy.index.names) & {'timestamp', 'id'}
+        activity = activity.reset_index()
+        energy = energy.reset_index()
+        df = pd.merge(activity, energy, on=['timestamp'])
+        df['energy'] = df['activity'] * df['energy']
+        df = df.set_index(idx)['energy']
+    return df
+
+def virtualize_battery_manager_energy(activity, battery_manager):
     """ Returns the product of energy and activity by socket. """
     activity = activity.reset_index()
     activity = activity.set_index(['timestamp', 'id'])['activity']
@@ -307,7 +320,7 @@ def account_battery_manager_energy(activity, battery_manager):
 
 # TODO(timur): this is an incomplete way of doing this. can we look up the
 # thread positioning within the gpu with nvml?
-def account_nvml_energy(activity, nvml):
+def virtualize_nvml_energy(activity, nvml):
     """ Returns the product of energy and activity. """
     activity = activity.groupby(['timestamp', 'id']).sum()
 
@@ -334,7 +347,7 @@ def account_nvml_energy(activity, nvml):
 def RAPL_DOMAIN_CONVERSION(x): return 0 if int(x) < 20 else 1
 
 
-def account_rapl_energy(activity, rapl):
+def virtualize_rapl_energy(activity, rapl):
     """ Returns the product of energy and activity by socket. """
     activity = activity.reset_index()
     activity['socket'] = activity.cpu.apply(RAPL_DOMAIN_CONVERSION)
@@ -362,19 +375,19 @@ def account_rapl_energy(activity, rapl):
 def compute_footprint(data):
     """ Produces an energy footprint from the data set. """
     # TODO(timur): we need a summary proto for this
-    activity = account_jiffies(data.task, data.cpu)
+    activity = virtualize_jiffies(data.process, data.cpu)
     activity.name = 'activity'
     footprints = {'activity': activity}
 
     if len(data.battery_manager) > 0:
-        footprints['battery_manager'] = account_battery_manager_energy(
+        footprints['battery_manager'] = virtualize_battery_manager_energy(
             activity, data.battery_manager)
 
     if len(data.nvml) > 0:
-        footprints['nvml'] = account_nvml_energy(activity, data.nvml)
+        footprints['nvml'] = virtualize_nvml_energy(activity, data.nvml)
 
     if len(data.rapl) > 0:
-        footprints['rapl'] = account_rapl_energy(activity, data.rapl)
+        footprints['rapl'] = virtualize_rapl_energy(activity, data.rapl)
 
     return footprints
 

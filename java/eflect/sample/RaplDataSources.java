@@ -6,7 +6,7 @@ import eflect.protos.sample.Sample;
 import java.time.Instant;
 import jrapl.Rapl;
 
-/** Static helper that packs jRapl readings into a proto. */
+/** Helper that packs jRapl readings into a {@link RaplSample}. */
 public final class RaplDataSources {
   public static Sample sampleRapl() {
     RaplSample.Builder sample = RaplSample.newBuilder().setTimestamp(Instant.now().toEpochMilli());

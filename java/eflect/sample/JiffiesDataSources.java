@@ -1,49 +1,48 @@
 package eflect.sample;
 
-import eflect.protos.sample.CpuStatReading;
-import eflect.protos.sample.CpuStatSample;
+import eflect.protos.sample.CpuReading;
+import eflect.protos.sample.CpuSample;
+import eflect.protos.sample.ProcessSample;
 import eflect.protos.sample.Sample;
-import eflect.protos.sample.TaskStatReading;
-import eflect.protos.sample.TaskStatSample;
-import eflect.util.LoggerUtil;
+import eflect.protos.sample.TaskReading;
 import java.io.BufferedReader;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.FileReader;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
-/** Static helper for reading jiffies from the /proc system. */
+/** Helper for reading jiffies from /proc system. */
 public final class JiffiesDataSources {
-  private static final Logger logger = LoggerUtil.getLogger();
-  private static final long PID = ProcessHandle.current().pid();
+  // TODO(zain): add android friendly version that uses cat instead of trying to read through java
+  /** Reads the cpu's stats and returns a {@link Sample} from it. */
+  public static Sample sampleCpus() {
+    String[] stats = new String[0];
+    try (BufferedReader reader = new BufferedReader(new FileReader(CpuSource.SYSTEM_STAT_FILE))) {
+      stats = CpuSource.readCpus(reader);
+    } catch (Exception e) {
+      System.out.println("unable to read " + CpuSource.SYSTEM_STAT_FILE);
+    }
 
-  /** Reads the cpu's stats and returns a sample from it. */
-  public static Sample sampleCpuStats() {
     return Sample.newBuilder()
-        .setCpu(CpuSource.readCpuStats().setTimestamp(Instant.now().toEpochMilli()))
+        .setCpu(CpuSource.parseCpus(stats).setTimestamp(Instant.now().toEpochMilli()))
         .build();
   }
 
-  /** Reads from a process's task directory and returns a sample from it. */
-  public static Sample sampleTaskStats(long pid) {
+  /** Reads from a process's tasks and returns a {@link Sample} of it. */
+  public static Sample sampleTasks(long pid) {
     return Sample.newBuilder()
-        .setTask(TaskSource.readTaskStats(pid).setTimestamp(Instant.now().toEpochMilli()))
+        .setProcess(
+            TasksSource.parseTasks(TasksSource.readTasks(pid))
+                .setTimestamp(Instant.now().toEpochMilli()))
         .build();
   }
 
-  /** Reads this application's thread's stat files and returns a timestamped sample. */
-  public static Sample sampleTaskStats() {
-    return sampleTaskStats(PID);
-  }
-
-  /** Wrapper around /proc/stat. */
   private static class CpuSource {
     // system information
     private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
     private static final String SYSTEM_STAT_FILE = String.join(File.separator, "/proc", "stat");
+
     // indicies for cpu stat because there are so many
     private enum CpuIndex {
       CPU(0),
@@ -66,30 +65,25 @@ public final class JiffiesDataSources {
     }
 
     /** Reads the system's stat file and returns individual cpus. */
-    private static String[] readCpus() {
+    private static String[] readCpus(BufferedReader reader) throws Exception {
       String[] stats = new String[CPU_COUNT];
-      try (BufferedReader reader = Files.newBufferedReader(Path.of(SYSTEM_STAT_FILE))) {
-        reader.readLine(); // first line is total summary; we need by cpu
-        for (int i = 0; i < CPU_COUNT; i++) {
-          stats[i] = reader.readLine();
-        }
-      } catch (Exception e) {
-        logger.info("unable to read " + SYSTEM_STAT_FILE);
-      } finally {
-        return stats;
+      reader.readLine(); // first line is total summary; we need by cpu
+      for (int i = 0; i < CPU_COUNT; i++) {
+        stats[i] = reader.readLine();
       }
+      return stats;
     }
 
-    /** Turns task stat strings into a Sample. */
-    private static CpuStatSample.Builder readCpuStats() {
-      CpuStatSample.Builder sample = CpuStatSample.newBuilder();
-      for (String statString : readCpus()) {
+    /** Turns stat strings into a {@link CpuSample}. */
+    private static CpuSample.Builder parseCpus(String[] stats) {
+      CpuSample.Builder sample = CpuSample.newBuilder();
+      for (String statString : stats) {
         String[] stat = statString.split(" ");
         if (stat.length != 11) {
           continue;
         }
         sample.addReading(
-            CpuStatReading.newBuilder()
+            CpuReading.newBuilder()
                 .setCpu(Integer.parseInt(stat[CpuIndex.CPU.index].substring(3)))
                 .setUser(Integer.parseInt(stat[CpuIndex.USER.index]))
                 .setNice(Integer.parseInt(stat[CpuIndex.NICE.index]))
@@ -106,8 +100,7 @@ public final class JiffiesDataSources {
     }
   }
 
-  /** Wrapper around /proc/pid/task/tid/stat. */
-  private static class TaskSource {
+  private static class TasksSource {
     // task stat indicies
     private static final int STAT_LENGTH = 52;
 
@@ -137,41 +130,40 @@ public final class JiffiesDataSources {
         if (!statFile.exists()) {
           continue;
         }
-        try {
-          stats.add(Files.readString(Path.of(statFile.getPath())));
+        try (BufferedReader reader = new BufferedReader(new FileReader(statFile))) {
+          stats.add(reader.readLine());
         } catch (Exception e) {
-          logger.info("unable to read task " + statFile + " before it terminated");
+          System.out.println("unable to read task " + statFile + " before it terminated");
         }
       }
       return stats;
+    }
+
+    /** Turns task stat strings into a {@link ProcessSample}. */
+    private static ProcessSample.Builder parseTasks(ArrayList<String> stats) {
+      ProcessSample.Builder sample = ProcessSample.newBuilder();
+      stats.forEach(
+          statString -> {
+            String[] stat = statString.split(" ");
+            if (stat.length >= STAT_LENGTH) {
+              // task name can be space-delimited, so there may be extra entries
+              int offset = stat.length - STAT_LENGTH;
+              sample.addReading(
+                  TaskReading.newBuilder()
+                      .setTaskId(Integer.parseInt(stat[TaskIndex.TID.index]))
+                      // .setName(getName(stat, offset))
+                      .setCpu(Integer.parseInt(stat[TaskIndex.CPU.index + offset]))
+                      .setUser(Integer.parseInt(stat[TaskIndex.USER.index + offset]))
+                      .setSystem(Integer.parseInt(stat[TaskIndex.SYSTEM.index + offset])));
+            }
+          });
+      return sample;
     }
 
     /** Extracts the name from the stat string. */
     private static final String getName(String[] stat, int offset) {
       String name = String.join(" ", Arrays.copyOfRange(stat, 1, 2 + offset));
       return name.substring(1, name.length() - 1);
-    }
-
-    /** Turns task stat strings into a Sample. */
-    private static TaskStatSample.Builder readTaskStats(long pid) {
-      TaskStatSample.Builder sample = TaskStatSample.newBuilder();
-      readTasks(pid)
-          .forEach(
-              statString -> {
-                String[] stat = statString.split(" ");
-                if (stat.length >= STAT_LENGTH) {
-                  // task name can be space-delimited, so there may be extra entries
-                  int offset = stat.length - STAT_LENGTH;
-                  sample.addReading(
-                      TaskStatReading.newBuilder()
-                          .setTaskId(Integer.parseInt(stat[TaskIndex.TID.index]))
-                          // .setName(getName(stat, offset))
-                          .setCpu(Integer.parseInt(stat[TaskIndex.CPU.index + offset]))
-                          .setUser(Integer.parseInt(stat[TaskIndex.USER.index + offset]))
-                          .setSystem(Integer.parseInt(stat[TaskIndex.SYSTEM.index + offset])));
-                }
-              });
-      return sample;
     }
   }
 

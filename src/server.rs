@@ -31,10 +31,10 @@ use tonic::{Request, Response, Status};
 use tonic::transport::Server;
 
 use protos::Sample;
-use protos::{CpuStatSample, CpuStatReading};
+use protos::{CpuSample, CpuReading};
 use protos::{NvmlSample, NvmlReading};
 use protos::{RaplSample, RaplReading};
-use protos::{TaskStatSample, TaskStatReading};
+use protos::{ProcessSample, TaskReading};
 use protos::{DataSet, StartRequest, StartResponse, StopRequest, StopResponse, ReadRequest, ReadResponse, sample::Data};
 use protos::sampler_server::{Sampler, SamplerServer};
 
@@ -62,7 +62,7 @@ enum SamplingError {
 fn sample_cpus() -> Result<Sample, SamplingError> {
     match read_cpus() {
         Ok(stats) => {
-            let mut sample = CpuStatSample::default();
+            let mut sample = CpuSample::default();
             sample.timestamp = now_ms();
             stats.into_iter().for_each(|stat| sample.reading.push(stat));
             let mut s = Sample::default();
@@ -75,7 +75,7 @@ fn sample_cpus() -> Result<Sample, SamplingError> {
     }
 }
 
-fn read_cpus() -> Result<Vec<CpuStatReading>, ProcError> {
+fn read_cpus() -> Result<Vec<CpuReading>, ProcError> {
     Ok(KernelStats::new()?.cpu_time
         .into_iter()
         .enumerate()
@@ -83,8 +83,8 @@ fn read_cpus() -> Result<Vec<CpuStatReading>, ProcError> {
         .collect())
 }
 
-fn cpu_stat_to_proto(cpu: u32, stat: CpuTime) -> CpuStatReading {
-    let mut stat_proto = CpuStatReading::default();
+fn cpu_stat_to_proto(cpu: u32, stat: CpuTime) -> CpuReading {
+    let mut stat_proto = CpuReading::default();
     stat_proto.cpu = cpu;
     stat_proto.user = Some(stat.user as u32);
     stat_proto.nice = Some(stat.nice as u32);
@@ -115,11 +115,11 @@ fn cpu_stat_to_proto(cpu: u32, stat: CpuTime) -> CpuStatReading {
 fn sample_tasks(pid: i32) -> Result<Sample, SamplingError> {
     match read_tasks(pid) {
         Ok(tasks) => {
-            let mut sample = TaskStatSample::default();
+            let mut sample = ProcessSample::default();
             sample.timestamp = now_ms();
             tasks.into_iter().for_each(|s| sample.reading.push(s));
             let mut s = Sample::default();
-            s.data = Some(Data::Task(sample));
+            s.data = Some(Data::Process(sample));
             Ok(s)
         }
         Err(ProcError::PermissionDenied(_)) | Err(ProcError::NotFound(_)) => Err(SamplingError::RequiresTermination(format!("/proc/{}/task could not be read", pid))),
@@ -127,7 +127,7 @@ fn sample_tasks(pid: i32) -> Result<Sample, SamplingError> {
     }
 }
 
-fn read_tasks(pid: i32) -> Result<Vec<TaskStatReading>, ProcError> {
+fn read_tasks(pid: i32) -> Result<Vec<TaskReading>, ProcError> {
     Ok(Process::new(pid)?.tasks()?
         .flatten()
         .filter_map(|stat| stat.stat().ok())
@@ -135,8 +135,8 @@ fn read_tasks(pid: i32) -> Result<Vec<TaskStatReading>, ProcError> {
         .collect())
 }
 
-fn task_stat_to_proto(stat: Stat) -> TaskStatReading {
-    let mut stat_proto = TaskStatReading::default();
+fn task_stat_to_proto(stat: Stat) -> TaskReading {
+    let mut stat_proto = TaskReading::default();
     stat_proto.task_id = stat.pid as u32;
     if let Some(cpu) = stat.processor {
         stat_proto.cpu = cpu as u32;
@@ -272,13 +272,13 @@ mod tests {
         let start = now_ms();
         let me = Process::myself().unwrap();
         if let Ok(sample) = sample_tasks(me.pid) {
-            if let Some(Data::Task(sample)) = sample.data {
+            if let Some(Data::Process(sample)) = sample.data {
                 assert!(sample.timestamp <= now_ms());
                 assert!(sample.timestamp >= start);
                 // TODO(timur): no good way to check if the threads in there are valid
                 assert_eq!(sample.reading.len(), me.tasks().unwrap().count());
             } else {
-                panic!("sampling tasks failed; data other than TaskSample returned");
+                panic!("sampling tasks failed; data other than ProcessSample returned");
             };
         } else {
             panic!("sampling tasks failed; /proc/[pid]/task couldn't be read");
@@ -425,12 +425,11 @@ impl Sampler for SamplerImpl {
                     Some(Data::Cpu(sample)) => data.cpu.push(sample),
                     Some(Data::Nvml(sample)) => data.nvml.push(sample),
                     Some(Data::Rapl(sample)) => data.rapl.push(sample),
-                    Some(Data::Task(sample)) => data.task.push(sample),
+                    Some(Data::Process(sample)) => data.process.push(sample),
                     _ => log::warn!("no sample found!")
                 }
             }
-            let empty = data.cpu.is_empty() && data.rapl.is_empty() && data.task.is_empty();
-            ReadResponse {data: if empty { None } else { Some(data) }}
+            ReadResponse {data: Some(data)}
         } else {
             warn!("ignoring read request while collecting");
             ReadResponse {data: None}

@@ -5,16 +5,18 @@ java_library(
   visibility = ["//visibility:public"],
   srcs = ["Eflect.java"],
   deps = [
-    "//java/eflect/sample",
     "//java/eflect/sample:jiffies",
     "//java/eflect/sample:rapl",
+    "//java/eflect/util",
     "//java/eflect/util:logger",
+    "//protos/sample:sample_java_protos",
   ],
   exports = [
-    "//java/eflect/sample",
     "//java/eflect/sample:jiffies",
     "//java/eflect/sample:rapl",
+    "//java/eflect/util",
     "//java/eflect/util:logger",
+    "//protos/sample:sample_java_protos",
   ]
 )
 

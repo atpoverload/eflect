@@ -43,6 +43,7 @@ class EflectClient:
         self.stub.Stop(StopRequest())
 
     def read(self):
+        # TODO(timur): implement this as streaming
         return self.stub.Read(ReadRequest())
 
 
@@ -53,14 +54,12 @@ def main():
     if args.command == 'start':
         if args.pid < 0:
             raise Exception(
-                'the pid to monitor must be non-negative ({})'.format(args.pid))
+                'invalid pid to monitor ({})'.format(args.pid))
         client.start(args.pid)
     elif args.command == 'stop':
         client.stop()
     elif args.command == 'read':
-        # TODO(timur): although python3 $PWD/client.py read > eflect-data.pb is
-        #   nice, it seems that the python grpc runs out of space. we should do
-        #   something with "read()" to handle this
+        # HINT: try python3 $PWD/client.py read > eflect-data.pb
         print(client.read())
 
 

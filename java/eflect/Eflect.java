@@ -1,23 +1,23 @@
 package eflect;
 
-import static eflect.util.LoggerUtil.getLogger;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 import eflect.protos.sample.DataSet;
+import eflect.protos.sample.Sample;
 import eflect.sample.JiffiesDataSources;
 import eflect.sample.RaplDataSources;
-import eflect.sample.SampleCollector;
+import eflect.util.CollectingFuture;
 import java.io.FileOutputStream;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import java.util.stream.Stream;
 
-/** An unsafe interface to eflect. */
+/** An unsafe interface for eflect in a linux system. */
 public final class Eflect {
-  private static final Logger logger = getLogger();
-
+  private static final long PID = ProcessHandle.current().pid();
   private static final long DEFAULT_PERIOD_MS = 50;
   private static final AtomicInteger counter = new AtomicInteger();
   private static final ThreadFactory threadFactory =
@@ -39,8 +39,8 @@ public final class Eflect {
   }
 
   private final long periodMillis;
-
-  private SampleCollector collector;
+  private final DataSet.Builder dataSet = DataSet.newBuilder();
+  private final ArrayList<CollectingFuture<? extends Sample>> data = new ArrayList<>();
 
   private Eflect() {
     this.periodMillis =
@@ -50,27 +50,23 @@ public final class Eflect {
 
   /** Creates and starts a new collector. If there is no executor, a new thread pool is spun-up. */
   public void start(long periodMillis) {
-    logger.info("starting eflect");
+    // make sure the period is valid
+    Duration period = Duration.ofMillis(periodMillis);
+    if (period.equals(Duration.ZERO)) {
+      throw new RuntimeException("cannot sample with a period of " + period);
+    }
+
     // make sure we have an executor
     if (executor == null) {
       executor = newScheduledThreadPool(3, threadFactory);
     }
-    // clear out the old collector
-    if (collector != null) {
-      collector.stop();
-      collector.read();
-      collector = null;
-    }
-    // make sure the period is valid
-    Duration period = Duration.ofMillis(periodMillis);
-    if (Duration.ZERO.equals(period)) {
-      throw new RuntimeException("cannot sample with a period of " + period);
-    }
-    // TODO: abstract the collector; we want to be able to switch to an online version
-    collector = new SampleCollector(executor);
-    collector.start(JiffiesDataSources::sampleCpuStats, period);
-    collector.start(RaplDataSources::sampleRapl, period);
-    collector.start(JiffiesDataSources::sampleTaskStats, period);
+
+    // start a new collection
+    dataSet.clear();
+    data.clear();
+    data.add(CollectingFuture.create(RaplDataSources::sampleRapl, period, executor));
+    data.add(CollectingFuture.create(JiffiesDataSources::sampleCpus, period, executor));
+    data.add(CollectingFuture.create(() -> JiffiesDataSources.sampleTasks(PID), period, executor));
   }
 
   /** Starts a collector with the default period. */
@@ -80,22 +76,45 @@ public final class Eflect {
 
   /** Stops the collector. */
   public void stop() {
-    collector.stop();
-    logger.info("stopped eflect");
+    data.stream().forEach(future -> future.cancel(true));
   }
 
   public DataSet read() {
-    return collector.read();
+    data.stream()
+        .flatMap(
+            future -> {
+              try {
+                return future.get().stream();
+              } catch (Exception e) {
+                return Stream.empty();
+              }
+            })
+        .forEach(
+            sample -> {
+              switch (sample.getDataCase()) {
+                case CPU:
+                  dataSet.addCpu(sample.getCpu());
+                  break;
+                case PROCESS:
+                  dataSet.addProcess(sample.getProcess());
+                  break;
+                case RAPL:
+                  dataSet.addRapl(sample.getRapl());
+                  break;
+                default:
+                  break;
+              }
+            });
+    data.clear();
+    return dataSet.build();
   }
 
   /** Writes all sample data from the last session to the output directory. */
   public void dump(String outputPath) {
-    logger.info("writing data set to " + outputPath);
     try (FileOutputStream output = new FileOutputStream(outputPath)) {
-      collector.read().writeTo(output);
-      logger.info("wrote data set to " + outputPath);
+      dataSet.build().writeTo(output);
     } catch (Exception e) {
-      logger.info("unable to write data");
+      System.out.println("unable to write data");
       e.printStackTrace();
     }
   }
@@ -104,24 +123,5 @@ public final class Eflect {
   public void shutdown() {
     executor.shutdown();
     executor = null;
-  }
-
-  public static void main(String[] args) throws Exception {
-    final AtomicInteger counter = new AtomicInteger();
-    ScheduledExecutorService executor =
-        newScheduledThreadPool(4, r -> new Thread(r, "eflect-" + counter.getAndIncrement()));
-
-    Eflect collector = Eflect.getInstance();
-    collector.start();
-
-    for (int i = 0; i < 10; i++) {
-      Thread.sleep(100);
-    }
-
-    collector.stop();
-
-    System.out.println(collector.read());
-
-    executor.shutdown();
   }
 }

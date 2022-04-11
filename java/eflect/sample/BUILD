@@ -24,28 +24,6 @@ java_library(
 )
 
 java_library(
-  name = "proc_stat",
-  srcs = [
-    "ProcStatDataSources.java",
-  ],
-  visibility = ["//visibility:public"],
-  deps = [
-    "//protos/sample:sample_java_protos",
-  ],
-)
-
-java_library(
-  name = "proc_task",
-  srcs = [
-    "ProcTaskDataSources.java",
-  ],
-  visibility = ["//visibility:public"],
-  deps = [
-    "//protos/sample:sample_java_protos",
-  ],
-)
-
-java_library(
   name = "sample",
   visibility = ["//visibility:public"],
   srcs = glob(["SampleCollector.java"]),
