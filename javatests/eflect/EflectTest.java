@@ -7,23 +7,20 @@ import org.junit.After;
 import org.junit.Test;
 
 public class EflectTest {
-  private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-  private static final long PID = ProcessHandle.current().pid();
-
   @After
   public void tearDown() {
     Eflect.getInstance().shutdown();
   }
 
   @Test
-  public void smokeTest() throws Exception {
+  public void linux_smokeTest() throws Exception {
     Eflect.getInstance().start();
-    Thread.sleep(100);
+    Thread.sleep(1000);
     Eflect.getInstance().stop();
     DataSet data = Eflect.getInstance().read();
 
-    assertTrue(data.getCpuCount() > 0);
-    assertTrue(data.getProcessCount() > 0);
-    assertTrue(data.getRaplCount() > 0);
+    assertTrue("the cpu jiffies were not read", data.getCpuCount() > 0);
+    assertTrue("the process jiffies were not read", data.getProcessCount() > 0);
+    assertTrue("rapl was not read", data.getRaplCount() > 0);
   }
 }

@@ -6,7 +6,7 @@ import eflect.protos.sample.DataSet;
 import eflect.protos.sample.Sample;
 import eflect.sample.JiffiesDataSources;
 import eflect.sample.RaplDataSources;
-import eflect.util.CollectingFuture;
+import eflect.util.SamplingFuture;
 import java.io.FileOutputStream;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public final class Eflect {
 
   private final long periodMillis;
   private final DataSet.Builder dataSet = DataSet.newBuilder();
-  private final ArrayList<CollectingFuture<? extends Sample>> data = new ArrayList<>();
+  private final ArrayList<SamplingFuture<? extends Sample>> data = new ArrayList<>();
 
   private Eflect() {
     this.periodMillis =
@@ -64,9 +64,14 @@ public final class Eflect {
     // start a new collection
     dataSet.clear();
     data.clear();
-    data.add(CollectingFuture.create(RaplDataSources::sampleRapl, period, executor));
-    data.add(CollectingFuture.create(JiffiesDataSources::sampleCpus, period, executor));
-    data.add(CollectingFuture.create(() -> JiffiesDataSources.sampleTasks(PID), period, executor));
+    data.add(
+        SamplingFuture.startFixedPeriodCollection(RaplDataSources::sampleRapl, period, executor));
+    data.add(
+        SamplingFuture.startFixedPeriodCollection(
+            JiffiesDataSources::sampleCpus, period, executor));
+    data.add(
+        SamplingFuture.startFixedPeriodCollection(
+            () -> JiffiesDataSources.sampleTasks(PID), period, executor));
   }
 
   /** Starts a collector with the default period. */

@@ -1,3 +1,5 @@
+// protos to represent rapl/powercap measurements
+//
 // https://www.kernel.org/doc/html/latest/power/powercap/powercap.html
 syntax = "proto2";
 

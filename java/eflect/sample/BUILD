@@ -23,18 +23,6 @@ java_library(
   ]
 )
 
-java_library(
-  name = "sample",
-  visibility = ["//visibility:public"],
-  srcs = glob(["SampleCollector.java"]),
-  deps = [
-    "//protos/sample:sample_java_protos",
-  ],
-  exports = [
-    "//protos/sample:sample_java_protos",
-  ],
-)
-
 genrule(
   name = "lib-cpu-scaler",
   visibility = ["//visibility:private"],
