@@ -140,6 +140,7 @@ fn task_stat_to_proto(stat: Stat) -> TaskReading {
     stat_proto.task_id = stat.pid as u32;
     if let Some(cpu) = stat.processor {
         stat_proto.cpu = cpu as u32;
+        // stat_proto.name = stat.comm;
         stat_proto.user = Some(stat.utime as u32);
         stat_proto.system = Some(stat.stime as u32);
     };

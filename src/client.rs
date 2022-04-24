@@ -29,12 +29,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut client = SamplerClient::connect("http://[::1]:50051").await?;
     match cmd {
-        "start" => client
-            .start(tonic::Request::new(StartRequest {
-                pid: submatches.unwrap().value_of("pid").unwrap().parse().ok()
-            }))
-            .await?
-        "stop" => client.stop(tonic::Request::new(StopRequest { pid: None })).await?
+        "start" => {
+            client
+                .start(tonic::Request::new(StartRequest {
+                    pid: submatches.unwrap().value_of("pid").unwrap().parse().ok()
+                }))
+                .await?;
+        },
+        "stop" => {
+            client.stop(tonic::Request::new(StopRequest { pid: None })).await?;
+        }
         "read" => {
             let message = client
                 .read(tonic::Request::new(ReadRequest { pid: None }))

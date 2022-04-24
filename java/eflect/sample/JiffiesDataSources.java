@@ -18,7 +18,8 @@ public final class JiffiesDataSources {
   /** Reads the cpu's stats and returns a {@link Sample} from it. */
   public static Sample sampleCpus() {
     String[] stats = new String[0];
-    try (BufferedReader reader = new BufferedReader(new FileReader(CpuSource.SYSTEM_STAT_FILE))) {
+    try {
+      BufferedReader reader = new BufferedReader(new FileReader(CpuSource.SYSTEM_STAT_FILE));
       stats = CpuSource.readCpus(reader);
     } catch (Exception e) {
       System.out.println("unable to read " + CpuSource.SYSTEM_STAT_FILE);
