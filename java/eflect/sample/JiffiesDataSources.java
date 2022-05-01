@@ -131,7 +131,8 @@ public final class JiffiesDataSources {
         if (!statFile.exists()) {
           continue;
         }
-        try (BufferedReader reader = new BufferedReader(new FileReader(statFile))) {
+        try {
+          BufferedReader reader = new BufferedReader(new FileReader(statFile));
           stats.add(reader.readLine());
         } catch (Exception e) {
           System.out.println("unable to read task " + statFile + " before it terminated");
