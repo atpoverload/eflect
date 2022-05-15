@@ -1,4 +1,4 @@
-""" code used to process data collected by eflect. """
+""" processing and virtualization code for a DataSet using pandas """
 import os
 
 from argparse import ArgumentParser
@@ -32,7 +32,7 @@ def max_rolling_difference(df, window_size=WINDOW_SIZE):
     return values, timestamps
 
 
-# jiffies processing
+# cpu jiffies processing
 def parse_cpu_samples(samples):
     """ Converts a collection of CpuSample to a DataFrame. """
     records = []
@@ -71,19 +71,35 @@ def parse_cpu_samples(samples):
     return df
 
 
+# TODO(timur): it's not clear which of these are actually useful
+ACTIVE_JIFFIES = [
+  'cpu',
+  'user',
+  'nice',
+  'system',
+  # 'idle',
+  # 'iowait',
+  'irq',
+  'softirq',
+  'steal',
+  'guest',
+  'guest_nice',
+]
+
+
 def process_cpu_data(df):
     """ Computes the cpu jiffy rate of each 50ms bucket """
-    df['jiffies'] = df.drop(
-        columns=['timestamp', 'cpu', 'idle', 'iowait']).sum(axis=1)
+    df['jiffies'] = df[ACTIVE_JIFFIES].sum(axis=1)
     df.timestamp = bucket_timestamps(df.timestamp)
 
-    jiffies, ts = max_rolling_difference(df.groupby(
-        ['timestamp', 'cpu']).jiffies.min().unstack())
+    jiffies = df.groupby(['timestamp', 'cpu']).jiffies.min().unstack()
+    jiffies, ts = max_rolling_difference(jiffies)
     jiffies = jiffies.stack().reset_index()
     jiffies = jiffies.groupby(['timestamp', 'cpu']).sum().unstack()
-    jiffies = jiffies.div(ts, axis=0).stack()
+    jiffies = jiffies.div(ts, axis=0).stack()[0]
+    jiffies.name = 'jiffies'
 
-    return jiffies[0]
+    return jiffies
 
 
 def cpu_samples_to_df(samples):
@@ -91,6 +107,7 @@ def cpu_samples_to_df(samples):
     return process_cpu_data(parse_cpu_samples(samples))
 
 
+# task jiffies processing
 def parse_task_samples(samples):
     """ Converts a collection of ProcessSamples to a DataFrame. """
     records = []
@@ -99,7 +116,7 @@ def parse_task_samples(samples):
             records.append([
                 sample.timestamp,
                 stat.task_id,
-                # stat.task_name,
+                stat.name if stat.HasField('name') else '',
                 stat.cpu,
                 stat.user,
                 stat.system
@@ -108,7 +125,7 @@ def parse_task_samples(samples):
     df.columns = [
         'timestamp',
         'id',
-        # 'name',
+        'thread_name',
         'cpu',
         'user',
         'system',
@@ -120,19 +137,22 @@ def parse_task_samples(samples):
 def process_task_data(df):
     """ Computes the app jiffy rate of each 50ms bucket """
     df['jiffies'] = df.user + df.system
-    # TODO(timur): the thread name is currently unused because it typically isn't useful
-    # df = df[~df.name.str.contains('eflect-')]
-    # df['id'] = df.id.astype(str) + '-' + df.name
-
+    df = df[~df.thread_name.str.contains('eflect-')]
     df.timestamp = bucket_timestamps(df.timestamp)
-    cpu = df.groupby(['timestamp', 'id']).cpu.max()
 
-    jiffies, ts = max_rolling_difference(df.groupby(
-        ['timestamp', 'id']).jiffies.min().unstack())
+    cpus = df.groupby(['timestamp', 'id']).cpu.max()
+    jiffies, ts = max_rolling_difference(df.groupby([
+        'timestamp',
+        'id'
+    ]).jiffies.min().unstack())
     jiffies = jiffies.stack().to_frame()
-    jiffies['cpu'] = cpu
-    jiffies = jiffies.groupby(['timestamp', 'id', 'cpu'])[0].sum(
-    ).unstack().unstack().div(ts, axis=0).stack().stack(0)
+    jiffies['cpu'] = cpus
+    jiffies = jiffies.groupby([
+        'timestamp',
+        'id',
+        'cpu'
+    ])[0].sum().unstack().unstack().div(ts, axis=0).stack().stack(0)
+    jiffies.name = 'jiffies'
 
     return jiffies
 
@@ -168,6 +188,9 @@ def process_battery_manager_data(df):
 
     energy, ts = max_rolling_difference(df)
     energy = energy.div(ts, axis=0)
+    energy.name = 'energy'
+    # TODO(timur): we're converting this to nanojoules for the moment
+    energy = energy * 3600
 
     return energy
 
@@ -201,11 +224,13 @@ def parse_nvml_samples(samples):
 def process_nvml_data(df):
     """ Computes the power of each 50ms bucket """
     df.timestamp = bucket_timestamps(df.timestamp)
-    df = df.groupby(['timestamp', 'bus_id']).min()
-    # TODO(timur): this assumes the baseline is the smallest reading; we should do something else
-    df = df - df.groupby('bus_id').min()
+    df = df.groupby(['timestamp', 'bus_id']).power_usage.min()
 
-    return df
+    # TODO(timur): this assumes the baseline is the smallest reading; we should do something else
+    energy = df - df.groupby('bus_id').min()
+    energy.name = 'energy'
+
+    return energy
 
 
 def nvml_samples_to_df(samples):
@@ -261,8 +286,13 @@ def process_rapl_data(df):
 
     energy, ts = max_rolling_difference(df.unstack())
     energy = energy.stack().stack().apply(maybe_apply_wrap_around)
-    energy = energy.groupby(
-        ['timestamp', 'socket', 'component']).sum().div(ts, axis=0)
+    energy = energy.groupby([
+        'timestamp',
+        'socket',
+        'component'
+    ]).sum()
+    energy = energy.div(ts, axis=0).dropna()
+    energy.name = 'energy'
 
     return energy
 
@@ -272,50 +302,49 @@ def rapl_samples_to_df(samples):
     return process_rapl_data(parse_rapl_samples(samples))
 
 
-# accounting
+# virtualization
 def virtualize_jiffies(process, cpu):
-    """ Returns the ratio of the jiffies with overattribution correction. """
+    """ Returns the ratio of the jiffies with attribution corrections. """
     tasks = task_samples_to_df(process)
     cpu = cpu_samples_to_df(cpu)
     # TODO(timur): let's clean this; i think it's outputting some garbage data
-    return (tasks / cpu.replace(0, 1)).replace(np.inf, 1).clip(0, 1)
+    activity = (tasks / cpu).dropna().replace(np.inf, 1).clip(0, 1)
+    activity.name = 'activity'
+    return activity
 
 
 def virtualize_energy(activity, energy):
+    """ Takes the product of the activity and energy data along the aligned axes. """
     try:
-        return activity * energy
-    except:
-        print('data could not be directly aligned; forcing merge instead')
-        idx = set(activity.index.names) & set(energy.index.names) & {'timestamp', 'id'}
-        activity = activity.reset_index()
-        energy = energy.reset_index()
-        df = pd.merge(activity, energy, on=['timestamp'])
-        df['energy'] = df['activity'] * df['energy']
-        df = df.set_index(idx)['energy']
-    return df
+        df = activity * energy
+        df.name = 'energy'
+        return df
+    except Exception as e:
+        # TODO(timur): sometimes the data can't be aligned and i don't know why
+        idx = list(set(activity.index.names) & set(energy.index.names))
+        print('data could not be directly aligned: {}'.format(e))
+        print('forcing merge on {} instead'.format(idx))
+        energy = pd.merge(
+            activity.reset_index(),
+            energy.reset_index(),
+            on=['timestamp']
+        ).set_index(idx)
+        energy = energy.activity * energy.energy
+        energy.name = 'energy'
+        return energy
+
 
 def virtualize_battery_manager_energy(activity, battery_manager):
     """ Returns the product of energy and activity by socket. """
-    activity = activity.reset_index()
-    activity = activity.set_index(['timestamp', 'id'])['activity']
+    activity = activity.reset_index('cpu').activity
 
     battery_manager = battery_manager_samples_to_df(battery_manager)
 
-    # TODO(timur): we should just be able to take the product but the axis
-    #   misalignment causes it to fail sometimes
-    try:
-        df = battery_manager * activity
-    except:
-        print('battery_manager data could not be directly aligned; forced merge instead')
-        activity = activity.reset_index()
-        battery_manager = battery_manager.reset_index()
-        df = pd.merge(activity, battery_manager, on=['timestamp'])
-        df[0] = df['activity'] * df['energy']
-        df = df.set_index(['timestamp', 'id'])[0]
-
-    df = df.reset_index().set_index(['timestamp', 'id'])
-    df.name = 'power'
-    return df
+    energy = virtualize_energy(activity, battery_manager)
+    # TODO(timur): this is a crude post-virtualization clean up; we should pick
+    #   something more formal
+    energy = energy[energy > 0].dropna() / 1000000000
+    return energy
 
 
 # TODO(timur): this is an incomplete way of doing this. can we look up the
@@ -326,21 +355,11 @@ def virtualize_nvml_energy(activity, nvml):
 
     nvml = nvml_samples_to_df(nvml)
 
-    # TODO(timur): we should just be able to take the product but the axis
-    #   misalignment causes it to fail sometimes
-    try:
-        df = nvml * activity
-    except:
-        print('nvml data could not be directly aligned; forced merge instead')
-        activity = activity.reset_index()
-        nvml = nvml.reset_index()
-        df = pd.merge(activity, nvml, on=['timestamp'])
-        df[0] = df['activity'] * df['power_usage']
-        df = df.set_index(['timestamp', 'id'])[0]
-
-    df = df.reset_index().set_index(['timestamp', 'id'])
-    df.name = 'power'
-    return df
+    energy = virtualize_energy(activity, nvml)
+    # TODO(timur): this is a crude post-virtualization clean up; we should pick
+    #   something more formal
+    energy = energy[energy > 0].dropna() / 1000
+    return energy
 
 
 # TODO(timur): find out if there's a way to abstract this
@@ -349,47 +368,40 @@ def RAPL_DOMAIN_CONVERSION(x): return 0 if int(x) < 20 else 1
 
 def virtualize_rapl_energy(activity, rapl):
     """ Returns the product of energy and activity by socket. """
-    activity = activity.reset_index()
+    activity = activity[activity > 0].reset_index()
     activity['socket'] = activity.cpu.apply(RAPL_DOMAIN_CONVERSION)
-    activity = activity.set_index(['timestamp', 'id', 'socket'])['activity']
+    activity = activity.set_index(['timestamp', 'id', 'socket']).activity
 
     rapl = rapl_samples_to_df(rapl)
 
-    # TODO(timur): we should just be able to take the product but the axis
-    #   misalignment causes it to fail sometimes
-    try:
-        df = rapl * activity
-    except:
-        print('rapl data could not be directly aligned; forced merge instead')
-        activity = activity.reset_index()
-        rapl = rapl.reset_index()
-        df = pd.merge(activity, rapl, on=['timestamp', 'socket'])
-        df[0] = df['0_x'] * df['0_y']
-        df = df.set_index(['timestamp', 'id', 'component', 'socket'])[0]
-
-    df = df.reset_index().set_index(['timestamp', 'id', 'component', 'socket'])
-    df.name = 'power'
-    return df
+    energy = virtualize_energy(activity, rapl)
+    # TODO(timur): this is a crude post-virtualization clean up; we should pick
+    #   something more formal
+    energy = energy[energy > 0].dropna() / 1000000
+    return energy
 
 
-def compute_footprint(data):
-    """ Produces an energy footprint from the data set. """
-    # TODO(timur): we need a summary proto for this
+def virtualize_data(data):
+    """ Produces energy virtualizations from a data set. """
+    # TODO(timur): we need a virtualization proto for this
+    print('virtualizing application activity...')
     activity = virtualize_jiffies(data.process, data.cpu)
-    activity.name = 'activity'
-    footprints = {'activity': activity}
+    virtualization = {'activity': activity}
 
     if len(data.battery_manager) > 0:
-        footprints['battery_manager'] = virtualize_battery_manager_energy(
+        print('virtualizing battery manager...')
+        virtualization['battery_manager'] = virtualize_battery_manager_energy(
             activity, data.battery_manager)
 
     if len(data.nvml) > 0:
-        footprints['nvml'] = virtualize_nvml_energy(activity, data.nvml)
+        print('virtualizing nvml...')
+        virtualization['nvml'] = virtualize_nvml_energy(activity, data.nvml)
 
     if len(data.rapl) > 0:
-        footprints['rapl'] = virtualize_rapl_energy(activity, data.rapl)
+        print('virtualizing rapl...')
+        virtualization['rapl'] = virtualize_rapl_energy(activity, data.rapl)
 
-    return footprints
+    return virtualization
 
 
 # cli to process globs of files
@@ -419,7 +431,7 @@ def main():
             data = DataSet()
             data.ParseFromString(f.read())
 
-        # TODO(timur): i hate that i did this. we need to get the footprint(s) in a proto
+        # TODO(timur): i hate that i did this. we need to get the data in a proto
         if args.output:
             if os.path.exists(args.output) and not os.path.isdir(args.output):
                 raise RuntimeError(
@@ -431,9 +443,10 @@ def main():
                 os.path.basename(file))[0]) + '.zip'
         else:
             path = os.path.splitext(file)[0] + '.zip'
-        footprints = compute_footprint(data)
+        footprints = virtualize_data(data)
 
         for key in footprints:
+            # print(footprints[key])
             footprints[key].to_csv(
                 path,
                 compression=dict(

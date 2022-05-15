@@ -1,14 +1,27 @@
-load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@eflect_client_py_deps//:requirements.bzl", "requirement")
 
 py_binary(
-  name = "processing",
-  srcs = ["processing.py"],
+  name = "virtualization",
+  srcs = ["virtualization.py"],
   visibility = ["//visibility:public"],
   deps = [
     "//protos/sample:sample_py_protos",
     requirement("numpy"),
     requirement("pandas"),
+  ]
+)
+
+py_test(
+  name = "processing_test",
+  srcs = ["processing_test.py", "collector.py"],
+  data = glob(["resources/*.textproto"]),
+  deps = [
+    ":processing",
+    "//protos/sample:sample_py_protos",
+    requirement("numpy"),
+    requirement("pandas"),
+    requirement("protobuf"),
   ]
 )
 
