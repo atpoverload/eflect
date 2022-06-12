@@ -2,6 +2,7 @@
 import os
 
 from argparse import ArgumentParser
+from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
@@ -303,18 +304,16 @@ def rapl_samples_to_df(samples):
 
 
 # virtualization
-def virtualize_jiffies(process, cpu):
+def virtualize_jiffies(tasks, cpu):
     """ Returns the ratio of the jiffies with attribution corrections. """
-    tasks = task_samples_to_df(process)
-    cpu = cpu_samples_to_df(cpu)
-    # TODO(timur): let's clean this; i think it's outputting some garbage data
     activity = (tasks / cpu).dropna().replace(np.inf, 1).clip(0, 1)
+    activity = activity[activity > 0]
     activity.name = 'activity'
     return activity
 
 
 def virtualize_energy(activity, energy):
-    """ Takes the product of the activity and energy data along the aligned axes. """
+    """ Computes the product of the data across shared indices. """
     try:
         df = activity * energy
         df.name = 'energy'
@@ -334,9 +333,12 @@ def virtualize_energy(activity, energy):
         return energy
 
 
-def virtualize_battery_manager_energy(activity, battery_manager):
-    """ Returns the product of energy and activity by socket. """
-    activity = activity.reset_index('cpu').activity
+def virtualize_battery_manager_energy(tasks, cpu, battery_manager):
+    """ Returns the product of energy and activity. """
+    activity = virtualize_jiffies(
+        tasks.reset_index('cpu').jiffies,
+        cpu.groupby(['timestamp']).sum()
+    )
 
     battery_manager = battery_manager_samples_to_df(battery_manager)
 
@@ -349,9 +351,12 @@ def virtualize_battery_manager_energy(activity, battery_manager):
 
 # TODO(timur): this is an incomplete way of doing this. can we look up the
 # thread positioning within the gpu with nvml?
-def virtualize_nvml_energy(activity, nvml):
+def virtualize_nvml_energy(tasks, cpu, nvml):
     """ Returns the product of energy and activity. """
-    activity = activity.groupby(['timestamp', 'id']).sum()
+    activity = virtualize_jiffies(
+        tasks.reset_index('cpu').jiffies,
+        cpu.groupby(['timestamp']).sum()
+    )
 
     nvml = nvml_samples_to_df(nvml)
 
@@ -366,11 +371,17 @@ def virtualize_nvml_energy(activity, nvml):
 def RAPL_DOMAIN_CONVERSION(x): return 0 if int(x) < 20 else 1
 
 
-def virtualize_rapl_energy(activity, rapl):
+def virtualize_rapl_energy(tasks, cpu, rapl):
     """ Returns the product of energy and activity by socket. """
-    activity = activity[activity > 0].reset_index()
-    activity['socket'] = activity.cpu.apply(RAPL_DOMAIN_CONVERSION)
-    activity = activity.set_index(['timestamp', 'id', 'socket']).activity
+    tasks = tasks.reset_index()
+    tasks['socket'] = tasks.cpu.apply(RAPL_DOMAIN_CONVERSION)
+    tasks = tasks.groupby(['timestamp', 'socket', 'id']).jiffies.sum()
+
+    cpu = cpu.reset_index()
+    cpu['socket'] = cpu.cpu.apply(RAPL_DOMAIN_CONVERSION)
+    cpu = cpu.groupby(['timestamp', 'socket']).jiffies.sum()
+
+    activity = virtualize_jiffies(tasks, cpu)
 
     rapl = rapl_samples_to_df(rapl)
 
@@ -378,28 +389,31 @@ def virtualize_rapl_energy(activity, rapl):
     # TODO(timur): this is a crude post-virtualization clean up; we should pick
     #   something more formal
     energy = energy[energy > 0].dropna() / 1000000
+
     return energy
 
 
 def virtualize_data(data):
     """ Produces energy virtualizations from a data set. """
-    # TODO(timur): we need a virtualization proto for this
     print('virtualizing application activity...')
-    activity = virtualize_jiffies(data.process, data.cpu)
-    virtualization = {'activity': activity}
+    tasks = task_samples_to_df(data.process)
+    cpu = cpu_samples_to_df(data.cpu)
+
+    # TODO(timur): we need a virtualization proto for this
+    virtualization = {}
 
     if len(data.battery_manager) > 0:
         print('virtualizing battery manager...')
         virtualization['battery_manager'] = virtualize_battery_manager_energy(
-            activity, data.battery_manager)
+            tasks, cpu, data.battery_manager)
 
     if len(data.nvml) > 0:
         print('virtualizing nvml...')
-        virtualization['nvml'] = virtualize_nvml_energy(activity, data.nvml)
+        virtualization['nvml'] = virtualize_nvml_energy(tasks, cpu, data.nvml)
 
     if len(data.rapl) > 0:
         print('virtualizing rapl...')
-        virtualization['rapl'] = virtualize_rapl_energy(activity, data.rapl)
+        virtualization['rapl'] = virtualize_rapl_energy(tasks, cpu, data.rapl)
 
     return virtualization
 
@@ -431,7 +445,6 @@ def main():
             data = DataSet()
             data.ParseFromString(f.read())
 
-        # TODO(timur): i hate that i did this. we need to get the data in a proto
         if args.output:
             if os.path.exists(args.output) and not os.path.isdir(args.output):
                 raise RuntimeError(
@@ -445,15 +458,11 @@ def main():
             path = os.path.splitext(file)[0] + '.zip'
         footprints = virtualize_data(data)
 
-        for key in footprints:
-            # print(footprints[key])
-            footprints[key].to_csv(
-                path,
-                compression=dict(
-                    method='zip',
-                    archive_name='{}.csv'.format(key)
-                )
-            )
+        # TODO: this only spits out a single file. we should be able to write
+        #   multiple files to the archive, but maybe not with pandas
+        with ZipFile(path, 'w') as archive:
+            for key in footprints:
+                archive.writestr('{}.csv'.format(key), footprints[key].to_csv())
 
 
 if __name__ == '__main__':
