@@ -420,7 +420,7 @@ def virtualize_data(data):
 
 # cli to process globs of files
 def parse_args():
-    """ Parses client-side arguments. """
+    """ Parses virtualization arguments. """
     parser = ArgumentParser()
     parser.add_argument(
         dest='files',

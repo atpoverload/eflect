@@ -1,11 +1,16 @@
-""" A data collector for eflect """
+""" A data collector for eflect. Only works with rapl. """
+import json
 import os
 
+from argparse import ArgumentParser
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Pipe
+from pprint import pprint
 from time import sleep, time
 
+# we may be able to prune this
 import pyRAPL
+
 
 # general helper
 def get_unixtime():
@@ -75,6 +80,9 @@ def sample_cpu():
 
 
 # rapl sources
+MEASUREMENT = None
+
+
 def sample_rapl():
     """ Gets a reading from the measurement. """
     global MEASUREMENT
@@ -97,6 +105,7 @@ def sample_rapl():
 PARENT_PIPE, CHILD_PIPE = Pipe()
 DEFAULT_PERIOD_SECS = 0.050
 
+
 def periodic_sample(sample_func, period, **kwargs):
     """ Collects data from a source periodically. """
     data = []
@@ -111,6 +120,7 @@ def periodic_sample(sample_func, period, **kwargs):
 
 
 def samples_to_data_set(samples):
+    """ Packs samples into a DataSet proto json. """
     data_set = {}
     for sample in samples:
         sample_type = list(sample.keys())[0]
@@ -121,11 +131,7 @@ def samples_to_data_set(samples):
 
 
 class EflectCollector:
-    def __init__(self, pid=None, output_dir=None, period=DEFAULT_PERIOD_SECS):
-        if output_dir is None:
-            self.output_dir = os.getcwd()
-        else:
-            self.output_dir = output_dir
+    def __init__(self, pid=None, period=DEFAULT_PERIOD_SECS):
         if pid is None:
             pid = os.getpid()
 
@@ -171,16 +177,82 @@ class EflectCollector:
             CHILD_PIPE.recv()
 
     def read(self):
+        """ Pulls samples from the futures into a DataSet proto json. """
         data = []
         for future in self.data_futures:
-            data.extend(future.result())
+            try:
+                data.extend(future.result())
+            except:
+                print('could not consume a future')
         self.data_futures = []
         return samples_to_data_set(data)
 
 
-if __name__ == '__main__':
-    collector = EflectCollector(pid=1)
+def parse_args():
+    """ Parses collector arguments. """
+    parser = ArgumentParser()
+    parser.add_argument(
+        dest='pid',
+        type=int,
+        default=None,
+        help='pid to collect from',
+    )
+    parser.add_argument(
+        '-p',
+        '--period',
+        dest='period',
+        type=float,
+        default=None,
+        help='sampling period for data collection',
+    )
+    parser.add_argument(
+        '-d',
+        '--duration',
+        dest='duration',
+        type=float,
+        default=None,
+        help='length of time data is collected',
+    )
+    parser.add_argument(
+        '-o',
+        '--output_dir',
+        dest='output',
+        default=None,
+        help='directory to write the processed data to',
+    )
+    return parser.parse_args()
+
+
+def wait_for_process(args):
+    """ Wait until either the process ends, the duration ends, or ctrl-C. """
+    try:
+        if args.duration is None:
+            try:
+                while os.path.exists(os.path.join('/proc', str(args.pid))):
+                    sleep(1000)
+            except:
+                print('process {} terminated'.format(args.pid))
+        else:
+            sleep(args.duration)
+    except KeyboardInterrupt:
+        print('user requested to end collection')
+
+
+def main():
+    args = parse_args()
+
+    collector = EflectCollector(pid=args.pid, period=args.period)
     collector.start()
-    sleep(0.1)
+    wait_for_process(args)
     collector.stop()
-    print(samples_to_data_set(collector.read()))
+
+    data = collector.read()
+    if args.output is None:
+        pprint(data)
+    else:
+        with open(args.output, 'w') as f:
+            json.dump(data, f)
+
+
+if __name__ == '__main__':
+    main()
