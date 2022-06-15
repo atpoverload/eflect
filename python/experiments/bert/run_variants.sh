@@ -8,7 +8,7 @@ mkdir "${DATA_DIR}"
 DATA_SET=CoLA
 
 for VARIANT in models/*; do
-  ./run_variant.sh "${VARIANT##*/}" "${DATA_SET}"
+  bash ./run_variant.sh "${VARIANT##*/}" "${DATA_SET}"
 done
 
 bazel run //python/eflect:processing -- $PWD/data/**/*.pb

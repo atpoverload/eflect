@@ -25,10 +25,10 @@ python3 "${BERT_DIR}/run_classifier.py" \
   --learning_rate=2e-5 \
   --num_train_epochs=3.0 \
   --output_dir=/tmp/output \
-  --tracing_output_dir="${DATA_DIR}"
+  --tracing_output_dir="${DATA_DIR}" &
 
-# BERT_PID=$!
-# ../../../target/debug/client start --pid=${BERT_PID}
-# tail --pid=${BERT_PID} -f /dev/null
-# ../../../target/debug/client stop
-# ../../../target/debug/client read --output "${DATA_DIR}/eflect-data.pb"
+BERT_PID=$!
+../../../target/debug/client start --pid=${BERT_PID}
+tail --pid=${BERT_PID} -f /dev/null
+../../../target/debug/client stop
+../../../target/debug/client read --output "${DATA_DIR}/eflect-data.pb"
