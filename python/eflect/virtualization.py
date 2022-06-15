@@ -33,6 +33,8 @@ def max_rolling_difference(df, window_size=WINDOW_SIZE):
     return values, timestamps
 
 
+# TODO(timur): this doesn't seem to scale well; task parsing including the
+#  (unnecessary) cpus failed due likely to memory constraints
 # cpu jiffies processing
 def parse_cpu_samples(samples):
     """ Converts a collection of CpuSample to a DataFrame. """
