@@ -147,12 +147,12 @@ def process_task_data(df):
         'id'
     ]).jiffies.min().unstack())
     jiffies = jiffies.stack().to_frame()
-    jiffies['cpu'] = cpus
     jiffies = jiffies.groupby([
         'timestamp',
         'id',
-        'cpu'
-    ])[0].sum().unstack().unstack().div(ts, axis=0).stack().stack(0)
+    ])[0].sum().unstack().div(ts, axis=0).stack().to_frame()
+    jiffies['cpu'] = cpus
+    jiffies = jiffies.reset_index().set_index(['timestamp', 'id', 'cpu'])[0]
     jiffies.name = 'jiffies'
 
     return jiffies
