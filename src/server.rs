@@ -365,15 +365,25 @@ impl SamplerImpl {
     }
 }
 
-impl Default for SamplerImpl {
-    fn default() -> SamplerImpl {
+impl SamplerImpl {
+    fn with_period(period: Duration) -> SamplerImpl {
         let (tx, rx) = channel::<Sample>();
         SamplerImpl {
-            period: Duration::from_millis(50),
+            period,
             is_running: Arc::new(AtomicBool::new(false)),
             sender: Arc::new(Mutex::new(tx)),
             receiver: Arc::new(Mutex::new(rx)),
         }
+    }
+
+    fn with_period_millis(period_millis: u64) -> SamplerImpl {
+        SamplerImpl::with_period(Duration::from_millis(period_millis))
+    }
+}
+
+impl Default for SamplerImpl {
+    fn default() -> SamplerImpl {
+        SamplerImpl::with_period_millis(50)
     }
 }
 
@@ -391,7 +401,7 @@ impl Sampler for SamplerImpl {
             self.is_running.store(true, Ordering::Relaxed);
 
             self.start_sampling_from(sample_cpus);
-            // self.start_sampling_from(sample_nvml);
+            self.start_sampling_from(sample_nvml);
             self.start_sampling_from(sample_rapl);
             self.start_sampling_from(move || sample_tasks(pid));
 
@@ -444,12 +454,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::builder().filter_level(LevelFilter::Info).init();
     let matches = App::new("eflect")
         .arg_from_usage("--addr [address] 'The address to host the eflect server at'")
+        .arg_from_usage("--period [period] 'The period in milliseconds to collect at'")
         .get_matches();
 
     let addr = matches.value_of("addr").or(Some("[::1]:50051")).unwrap().parse().unwrap();
     info!("eflect listening on {}", addr);
 
-    let sampler = SamplerImpl::default();
+    let sampler = match matches.value_of("period") {
+        Some(period) => SamplerImpl::with_period_millis(period.parse().unwrap()),
+        _ => SamplerImpl::default()
+    };
     Server::builder()
         .add_service(SamplerServer::new(sampler))
         .serve(addr)
