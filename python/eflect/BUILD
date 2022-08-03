@@ -40,7 +40,7 @@ py_binary(
   main = "harness.py",
   srcs = [
     "harness.py",
-    "processing.py"
+    "virtualization.py"
   ],
   visibility = ["//visibility:public"],
   deps = [
