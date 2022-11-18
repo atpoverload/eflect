@@ -18,6 +18,14 @@ prost-types = "0.9"
 tonic = "0.6.2"
 tokio = {version = "1.0", features = ["rt-multi-thread"]}
 
+serde = {version="1.0", features=["rc"]}
+serde_derive = "1.0"
+serde_json = "1.0"
+
+android_trace_log = "0.2.0"
+
+wild = "2.0.4"
+
 [build-dependencies]
 tonic-build = "0.6.2"
 
@@ -28,3 +36,7 @@ path = "src/server.rs"
 [[bin]]
 name = "client"
 path = "src/client.rs"
+
+[[bin]]
+name = "android-trace"
+path = "src/android_trace.rs"
