@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package eflect.sample;
+
+option java_multiple_files = true;
+option java_package = "eflect.sample";
+
+import "google/protobuf/timestamp.proto";
+
+// protos to represent the jiffies timesharing objects
+//
+// the messages here represent the fields for /proc/stat and
+// /proc/[pid]/stat to track application behavior by cpu location
+//
+// refer to https://man7.org/linux/man-pages/man5/proc.5.html
+
+// TODO(timur): since jiffies are system dependent, these values should only be
+//   compared within the same runtime (i.e. data set). if we wanted to get real
+//   cycles, we'd need to retain the jiffies update time (typically 10MHz).
+message CpuReading {
+  uint32 cpu = 1;
+  uint32 user = 2;
+  uint32 nice = 3;
+  uint32 system = 4;
+  uint32 idle = 5;
+  uint32 iowait = 6;
+  uint32 irq = 7;
+  uint32 softirq = 8;
+  uint32 steal = 9;
+  uint32 guest = 10;
+  uint32 guest_nice = 11;
+}
+
+message CpuSample {
+  google.protobuf.Timestamp timestamp = 1;
+  repeated CpuReading reading = 2;
+}
+
+// TODO(timur): there is quite a lot of metadata we can retain still but a lot
+//   of it is contextual
+message TaskReading {
+  uint32 task_id = 1;
+  string name = 2;
+  uint32 cpu = 3;
+  uint32 user = 4;
+  uint32 system = 5;
+}
+
+message TaskSample {
+  google.protobuf.Timestamp timestamp = 1;
+  repeated TaskReading reading = 2;
+}
