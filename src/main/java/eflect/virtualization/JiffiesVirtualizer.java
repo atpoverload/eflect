@@ -18,9 +18,7 @@ import java.util.Optional;
 
 public final class JiffiesVirtualizer {
   /** Tries to align the {@link TaskSamples} and {@link CpuSamples} into jiffy virtualizations. */
-  public static List<Difference<Activity>> virtualize(EflectDataSet data, long millisThresh) {
-    ArrayList<Difference<Activity>> jiffies = new ArrayList<>();
-
+  public static List<Difference<Activity>> virtualize(EflectDataSet data, long millisThresh) {   
     if (data.getTaskCount() < 2 || data.getCpuCount() < 2) {
       System.out.println("not enough samples to align data");
       return new ArrayList<>();
@@ -32,6 +30,7 @@ public final class JiffiesVirtualizer {
     Difference<TaskReading> task = tasks.next();
     Difference<CpuReading> cpu = cpus.next();
 
+    ArrayList<Difference<Activity>> jiffies = new ArrayList<>();
     while (true) {
       long taskStart = Timestamps.toMillis(task.start) / millisThresh;
       long taskEnd = Timestamps.toMillis(task.end) / millisThresh;
@@ -53,7 +52,7 @@ public final class JiffiesVirtualizer {
       }
 
       jiffies.add(
-          Difference.of(
+          new Difference(
               Timestamps.fromMillis(millisThresh * (taskStart < cpuStart ? taskStart : cpuStart)),
               Timestamps.fromMillis(millisThresh * (taskEnd > cpuEnd ? taskEnd : cpuEnd)),
               virtualizeJiffies(task, cpu)));
@@ -72,7 +71,7 @@ public final class JiffiesVirtualizer {
   }
 
   /** Sort the samples by timestamp and compute the forward difference between pairs. */
-  private static List<Difference<CpuReading>> processCpus(List<CpuSample> samples) {
+  static List<Difference<CpuReading>> processCpus(List<CpuSample> samples) {
     ArrayList<Difference<CpuReading>> diffs = new ArrayList<>();
     Optional<CpuSample> last = Optional.empty();
     for (CpuSample sample :
@@ -82,7 +81,7 @@ public final class JiffiesVirtualizer {
             .collect(toList())) {
       if (last.isPresent()) {
         Difference<CpuReading> diff =
-            Difference.of(
+            new Difference(
                 last.get().getTimestamp(), sample.getTimestamp(), difference(last.get(), sample));
         diffs.add(diff);
       }
@@ -124,7 +123,7 @@ public final class JiffiesVirtualizer {
   }
 
   /** Sort the samples by timestamp and compute the forward difference between pairs. */
-  private static List<Difference<TaskReading>> processTasks(List<TaskSample> samples) {
+  static List<Difference<TaskReading>> processTasks(List<TaskSample> samples) {
     ArrayList<Difference<TaskReading>> diffs = new ArrayList<>();
     Optional<TaskSample> last = Optional.empty();
     for (TaskSample sample :
@@ -134,7 +133,7 @@ public final class JiffiesVirtualizer {
             .collect(toList())) {
       if (last.isPresent()) {
         Difference<TaskReading> diff =
-            Difference.of(
+            new Difference(
                 last.get().getTimestamp(), sample.getTimestamp(), difference(last.get(), sample));
         diffs.add(diff);
       }
@@ -180,7 +179,7 @@ public final class JiffiesVirtualizer {
       Difference<TaskReading> task, Difference<CpuReading> cpu) {
     double[] cpuJiffies = getTotalJiffies(cpu);
     List<Activity> jiffies =
-        task.getData().stream().map(JiffiesVirtualizer::virtualizeTask).collect(toList());
+        task.data.stream().map(JiffiesVirtualizer::virtualizeTask).collect(toList());
     double[] taskJiffies = new double[cpuJiffies.length];
     jiffies
         .stream()
@@ -202,8 +201,8 @@ public final class JiffiesVirtualizer {
   }
 
   private static double[] getTotalJiffies(Difference<CpuReading> cpu) {
-    double[] cpuJiffies = new double[cpu.getData().size()];
-    for (CpuReading reading : cpu.getData()) {
+    double[] cpuJiffies = new double[cpu.data.size()];
+    for (CpuReading reading : cpu.data) {
       cpuJiffies[reading.getCpu()] =
           reading.getUser()
               + reading.getSystem()

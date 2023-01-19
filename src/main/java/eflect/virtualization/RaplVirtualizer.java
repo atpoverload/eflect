@@ -3,6 +3,7 @@ package eflect.virtualization;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.Timestamps;
 import eflect.EflectDataSet;
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import jrapl.RaplSample;
 
 public final class RaplVirtualizer {
   /** Tries to align the {@link TaskSamples} and {@link CpuSamples} into jiffy virtualizations. */
-  public static List<Difference<VirtualizedEnergy>> virtualize(
+  public static List<VirtualizedEnergy> virtualize(
       EflectDataSet data, IntUnaryOperator socketMapper, long millisThresh) {
     if (data.getRaplCount() < 2) {
       System.out.println("not enough energy samples to align data");
@@ -38,7 +39,7 @@ public final class RaplVirtualizer {
     Difference<Activity> activity = activityIt.next();
     RaplDifference energy = energies.next();
 
-    ArrayList<Difference<VirtualizedEnergy>> virtualized = new ArrayList<>();
+    ArrayList<VirtualizedEnergy> virtualized = new ArrayList<>();
     while (true) {
       long activityStart = Timestamps.toMillis(activity.start) / millisThresh;
       long activityEnd = Timestamps.toMillis(activity.end) / millisThresh;
@@ -59,13 +60,13 @@ public final class RaplVirtualizer {
         continue;
       }
 
-      virtualized.add(
-          Difference.of(
+      virtualized.addAll(
+        virtualizeEnergy(
               Timestamps.fromMillis(
                   millisThresh * (activityStart < energyStart ? activityStart : energyStart)),
               Timestamps.fromMillis(
                   millisThresh * (activityEnd > energyEnd ? activityEnd : energyEnd)),
-              virtualizeEnergy(activity, energy, socketMapper)));
+              activity, energy, socketMapper));
 
       if (!energies.hasNext() || !activityIt.hasNext()) {
         break;
@@ -99,18 +100,18 @@ public final class RaplVirtualizer {
 
   /** Compute the jiffies consumption of tasks with task jiff / cpu jiff / total task jiff. */
   private static List<VirtualizedEnergy> virtualizeEnergy(
-      Difference<Activity> task, RaplDifference energy, IntUnaryOperator socketMapper) {
+      Timestamp start, Timestamp end, Difference<Activity> task, RaplDifference energy, IntUnaryOperator socketMapper) {
     Map<Integer, RaplReading> readings =
         energy.getReadingList().stream().collect(toMap(r -> r.getSocket(), r -> r));
-    return task.getData()
+    return task.data
         .stream()
         .filter(a -> a.activity > 0)
         .map(
             r -> {
               RaplReading reading = readings.get(socketMapper.applyAsInt(r.cpu));
               return VirtualizedEnergy.newBuilder()
-                  .setStart(task.start)
-                  .setEnd(task.end)
+                  .setStart(start)
+                  .setEnd(end)
                   .setEnergy(
                       (reading.getPackage()
                               + reading.getDram()
