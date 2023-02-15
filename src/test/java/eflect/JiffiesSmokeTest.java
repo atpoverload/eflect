@@ -1,24 +1,25 @@
-package eflect.sample;
+package eflect;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.google.protobuf.util.Timestamps;
 import java.time.Instant;
 import org.junit.Test;
 
-public class JiffiesTest {
-  private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+public class JiffiesSmokeTest {
   private static final long PID = ProcessHandle.current().pid();
+  private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
   @Test
   public void procStat_smokeTest() {
     Instant start = Instant.now();
-    CpuSample sample = Jiffies.sampleCpus();
+    CpuSample sample = CpuJiffies.sample();
     Instant end = Instant.now();
 
-    assertTimestamp(Instant.ofEpochSecond(
-      sample.getTimestamp().getSeconds(), sample.getTimestamp().getNanos()), start, end);
+    assertTimestamp(
+        Instant.ofEpochSecond(sample.getTimestamp().getSeconds(), sample.getTimestamp().getNanos()),
+        start,
+        end);
     int cpuCount = sample.getReadingCount();
     assertEquals(
         String.format("expected %d cpus but got %d", CPU_COUNT, cpuCount), cpuCount, CPU_COUNT);
@@ -29,11 +30,13 @@ public class JiffiesTest {
     // TODO(timur): can we get the threads beyond java?
     int expectedThreadCount = Thread.activeCount();
     Instant start = Instant.now();
-    TaskSample sample = Jiffies.sampleTasks(PID);
+    TaskSample sample = TaskJiffies.sample(PID);
     Instant end = Instant.now();
 
-    assertTimestamp(Instant.ofEpochSecond(
-      sample.getTimestamp().getSeconds(), sample.getTimestamp().getNanos()), start, end);
+    assertTimestamp(
+        Instant.ofEpochSecond(sample.getTimestamp().getSeconds(), sample.getTimestamp().getNanos()),
+        start,
+        end);
     int taskCount = sample.getReadingCount();
     assertTrue(
         String.format("expected at least %d threads but got %d", expectedThreadCount, taskCount),

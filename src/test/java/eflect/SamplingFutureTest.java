@@ -1,4 +1,4 @@
-package eflect.sample;
+package eflect;
 
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.junit.Assert.assertEquals;
@@ -143,7 +143,7 @@ public class SamplingFutureTest {
 
   private void assertCancelledButCollecting(SamplingFuture<?> future) {
     assertTrue("expected future to be cancelled", future.isCancelled());
-    assertTrue("expected future to be done", !future.isDone());
+    assertTrue("expected future to not be done", !future.isDone());
   }
 
   private void assertContains(SamplingFuture<?> future, int count) {

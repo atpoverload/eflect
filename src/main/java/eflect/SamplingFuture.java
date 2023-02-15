@@ -1,4 +1,4 @@
-package eflect.sample;
+package eflect;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toList;

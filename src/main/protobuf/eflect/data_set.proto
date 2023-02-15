@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package eflect;
 
-import "eflect/sample/sample.proto";
+import "jiffies.proto";
 import "jrapl/jrapl.proto";
 
 option java_multiple_files = true;
@@ -14,6 +14,6 @@ message EflectDataSet {
   repeated jrapl.RaplSample rapl = 1;
 
   // jiffies data
-  repeated sample.CpuSample cpu = 2;
-  repeated sample.TaskSample task = 3;
+  repeated CpuSample cpu = 2;
+  repeated TaskSample task = 3;
 }
